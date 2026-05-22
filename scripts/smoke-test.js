@@ -25,6 +25,11 @@ const requiredFiles = [
   "src/main-world.js",
   "src/shared.js",
   "fixtures/live-x-smoke.md",
+  "README.zh-CN.md",
+  "docs/usage.md",
+  "docs/usage.zh-CN.md",
+  "docs/privacy.md",
+  "docs/privacy.zh-CN.md",
   "assets/icon-16.png",
   "assets/icon-32.png",
   "assets/icon-48.png",
@@ -61,5 +66,34 @@ assert.ok(counts.tweet >= 1, "fixture should include a tweet");
 assert.ok(counts.code >= 1, "fixture should include a code block");
 assert.ok(counts.divider >= 1, "fixture should include a divider");
 assert.ok(plan.html.includes("__XPOSTER_"), "paste plan should include replacement markers");
+
+const readText = (relativePath) => fs.readFileSync(path.join(root, relativePath), "utf8");
+const readme = readText("README.md");
+const readmeZh = readText("README.zh-CN.md");
+const usageZh = readText("docs/usage.zh-CN.md");
+const allPublicText = [
+  "README.md",
+  "README.zh-CN.md",
+  "docs/usage.md",
+  "docs/usage.zh-CN.md",
+  "docs/privacy.md",
+  "docs/privacy.zh-CN.md",
+  "manifest.json",
+  "sidepanel.js"
+]
+  .map(readText)
+  .join("\n");
+
+assert.ok(
+  readme.includes("https://chromewebstore.google.com/detail/xposter/iimkimodgdjnnmdopeolboakhjmhfbbj"),
+  "English README should recommend the Chrome Web Store listing"
+);
+assert.ok(readmeZh.includes("Chrome Web Store"), "Chinese README should mention Chrome Web Store");
+assert.ok(usageZh.includes("添加至 Chrome"), "Chinese usage guide should explain store installation");
+assert.ok(readmeZh.includes("https://x.com/xiaoxiaodong01"), "Chinese README should include author contact");
+assert.ok(
+  !/https:\/\/[^\s"']*cos\.ap-guangzhou\.myqcloud\.com/.test(allPublicText),
+  "private image host must not be exposed"
+);
 
 console.log("xPoster smoke test passed");

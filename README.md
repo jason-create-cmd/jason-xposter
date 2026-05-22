@@ -4,6 +4,8 @@ xPoster is a free Chrome extension that moves a Markdown draft into X Articles.
 
 It is built for people who write in Markdown first, then publish on X later. You paste or load a `.md` file, xPoster previews what it understands, checks the active X Article tab, fills the editor, and leaves the final Publish click to you.
 
+[中文说明](README.zh-CN.md)
+
 ![xPoster side panel screenshot](docs/images/sidepanel-real.png)
 
 ## Why Use It
@@ -18,14 +20,21 @@ It is built for people who write in Markdown first, then publish on X later. You
 
 ![Chrome load unpacked steps](docs/images/install-steps.svg)
 
+Recommended install path:
+
+1. Open the Chrome Web Store listing: [xPoster on Chrome Web Store](https://chromewebstore.google.com/detail/xposter/iimkimodgdjnnmdopeolboakhjmhfbbj?authuser=0&hl=zh-CN).
+2. Click **Add to Chrome**.
+3. Open X Articles and start using xPoster. The store version is the recommended version and will keep receiving feature updates and improvements.
+
+Developer install from source:
+
 1. Download or clone this project.
 2. Open Chrome and go to `chrome://extensions`.
 3. Turn on **Developer mode**.
 4. Click **Load unpacked**.
 5. Select the xPoster project folder, the folder that contains `manifest.json`.
-6. Pin xPoster or open it from the side panel.
 
-Chrome may show that this is an unpacked extension. That is expected for an open-source install.
+Use the source install only if you want to inspect or modify the extension yourself.
 
 ## Quick Use
 
@@ -61,15 +70,7 @@ For local images, keep the image files near your Markdown file and choose the lo
 
 For web images, Chrome may ask for one-time permission to read the image website. xPoster needs that browser permission so it can download the image and upload the actual file into X. It does not grant xPoster permission to publish.
 
-The current manifest declares one optional remote image host:
-
-```json
-"optional_host_permissions": [
-  "https://example-image-host.invalid/*"
-]
-```
-
-If your Markdown uses another image host, add that host to `optional_host_permissions`, reload the extension, and try again.
+The public source build does not expose private image hosts. If you maintain your own fork and need remote image support for a specific host, declare only the host you trust in your own extension manifest.
 
 ## Safety And Privacy
 
@@ -133,6 +134,10 @@ Open an issue with your Chrome version, xPoster version, and the diagnostics JSO
 ## Contributing
 
 Issues and pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Contact
+
+Contact the author on X: [@xiaoxiaodong01](https://x.com/xiaoxiaodong01).
 
 ## License
 

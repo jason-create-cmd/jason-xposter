@@ -1,8 +1,18 @@
 # xPoster Usage Guide
 
+[中文使用说明](usage.zh-CN.md)
+
 This guide is written for someone who has never loaded a Chrome extension before.
 
 ## 1. Install xPoster
+
+Recommended:
+
+1. Open [xPoster on Chrome Web Store](https://chromewebstore.google.com/detail/xposter/iimkimodgdjnnmdopeolboakhjmhfbbj?authuser=0&hl=zh-CN).
+2. Click **Add to Chrome**.
+3. Use the store version for ongoing updates and improvements.
+
+Developer install from source:
 
 1. Download or clone xPoster.
 2. Open Chrome.
@@ -114,7 +124,7 @@ xPoster never clicks Publish. You publish manually only after review.
 
 ### Chrome says the extension is unpacked
 
-That is normal. You installed it directly from source instead of the Chrome Web Store.
+That is normal when you install directly from source. Regular users should install from the Chrome Web Store.
 
 ### Check article says the editor is missing
 

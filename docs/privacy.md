@@ -1,5 +1,7 @@
 # Privacy
 
+[中文隐私说明](privacy.zh-CN.md)
+
 xPoster is designed as a local browser extension.
 
 ## What It Reads
@@ -29,4 +31,8 @@ xPoster is designed as a local browser extension.
 - `sidePanel`: show the publishing console.
 - `tabs`: find and check the active X Article tab.
 - `https://x.com/*` and `https://twitter.com/*`: run the importer on X/Twitter pages.
-- Optional host permissions: read image files from approved image hosts when your Markdown references web images.
+- Optional host permissions in published builds: read image files from approved image hosts when your Markdown references web images.
+
+## Contact
+
+Contact the author on X: [@xiaoxiaodong01](https://x.com/xiaoxiaodong01).
