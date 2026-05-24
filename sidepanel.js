@@ -73,7 +73,6 @@
     openArticles: document.getElementById("openArticles"),
     loadFile: document.getElementById("loadFile"),
     loadSmoke: document.getElementById("loadSmoke"),
-    clearDraft: document.getElementById("clearDraft"),
     pickVault: document.getElementById("pickVault"),
     pickVaultSettings: document.getElementById("pickVaultSettings"),
     clearVault: document.getElementById("clearVault"),
@@ -815,7 +814,6 @@ console.log("示例代码块");
       "Load the live verification fixture": "加载实时验证草稿",
       "Load example Markdown draft": "加载 Markdown 样例草稿",
       "Load an example Markdown draft": "加载 Markdown 样例草稿",
-      "Clear draft": "清除草稿",
       "Supports headings, lists, links, images, tables, tweet links, code blocks, and dividers. Web image links need a one-time Chrome approval; local image paths need a folder in Settings.": "支持标题、列表、链接、图片、表格、推文链接、代码块和分割线。网页图片写入时自动尝试处理；本地图片路径需要在设置里选择文件夹。",
       "Supports headings, lists, links, images, tables, tweet links, code blocks, and dividers. Nothing is written to X until you click Import.": "支持标题、列表、链接、图片、表格、推文链接、代码块和分割线。点击导入前，不会写入 X。",
       "Supports headings, links, images, tables, tweet links, code blocks, and dividers. Remote images may ask for permission to read that image site.": "支持标题、链接、图片、表格、推文链接、代码块和分割线。网页图片会在写入时自动尝试处理。",
@@ -2198,6 +2196,48 @@ console.log("示例代码块");
     return Array.from(remoteImageOriginCounts(parsed).keys());
   }
 
+  function remoteImagePermissionPattern(origin) {
+    try {
+      const url = new URL(origin);
+      if (url.protocol !== "http:" && url.protocol !== "https:") return "";
+      return `${url.origin}/*`;
+    } catch {
+      return "";
+    }
+  }
+
+  async function remoteImagePermissionStatus(origins) {
+    const available = [];
+    const missing = [];
+    const uniqueOrigins = Array.from(new Set((origins || []).filter(Boolean)));
+    if (!hasChromeApi() || !chrome.permissions?.contains) {
+      return { available, missing: uniqueOrigins };
+    }
+    await Promise.all(uniqueOrigins.map(async (origin) => {
+      const permission = remoteImagePermissionPattern(origin);
+      if (!permission) return;
+      try {
+        if (await chrome.permissions.contains({ origins: [permission] })) available.push(origin);
+        else missing.push(origin);
+      } catch {
+        missing.push(origin);
+      }
+    }));
+    return { available, missing };
+  }
+
+  function remoteImageOriginsForMarkdowns(markdowns = []) {
+    const origins = new Set();
+    for (const markdown of markdowns) {
+      try {
+        for (const origin of remoteImageOrigins(shared.parseMarkdown(markdown || ""))) {
+          origins.add(origin);
+        }
+      } catch {}
+    }
+    return Array.from(origins);
+  }
+
   function remoteImageProbeKey(segment) {
     return String(segment?.source || "");
   }
@@ -2826,8 +2866,8 @@ console.log("示例代码块");
     const origins = remoteImageOrigins(parsed);
     remoteImageAccessStatus = {
       origins,
-      available: origins,
-      missing: [],
+      available: [],
+      missing: origins,
       checkedAt: null
     };
     resetRemoteImageProbeStatus(parsed);
@@ -2835,14 +2875,37 @@ console.log("示例代码块");
 
   async function refreshRemoteImageAccessStatus(parsed = latestParsed) {
     const origins = remoteImageOrigins(parsed);
+    const { available, missing } = await remoteImagePermissionStatus(origins);
     remoteImageAccessStatus = {
       origins,
-      available: origins,
-      missing: [],
+      available,
+      missing,
       checkedAt: new Date().toISOString()
     };
     updatePreflight();
     return remoteImageAccessStatus;
+  }
+
+  async function requestRemoteImageAccessForOrigins(origins, parsedForStatus = latestParsed) {
+    const permissions = Array.from(new Set((origins || [])
+      .map(remoteImagePermissionPattern)
+      .filter(Boolean)));
+    if (!permissions.length) return { ok: true, requested: [], granted: true };
+    if (!hasChromeApi() || !chrome.permissions?.request) {
+      return { ok: false, requested: permissions, error: "Remote image access is not available in this context." };
+    }
+    try {
+      const granted = await chrome.permissions.request({ origins: permissions });
+      await refreshRemoteImageAccessStatus(parsedForStatus);
+      return { ok: granted, requested: permissions, granted };
+    } catch (error) {
+      await refreshRemoteImageAccessStatus(parsedForStatus).catch(() => {});
+      return { ok: false, requested: permissions, error: error?.message || String(error) };
+    }
+  }
+
+  async function requestRemoteImageAccess(parsed = latestParsed) {
+    return requestRemoteImageAccessForOrigins(remoteImageOrigins(parsed), parsed);
   }
 
   function originalImporterResidueStatus() {
@@ -5452,6 +5515,17 @@ console.log("示例代码块");
       renderDraftQueue();
     }
     const parsed = ensureLatestParsedFromDraft();
+    const remoteImages = remoteHttpImageSegments(parsed);
+    if (remoteImages.length) {
+      const permission = await requestRemoteImageAccess(parsed);
+      if (!permission.ok) {
+        log(
+          permission.error
+            ? `Web image permission unavailable: ${permission.error}. Failed downloads will stay as Markdown links.`
+            : "Web image permission was not granted. Failed downloads will stay as Markdown links."
+        );
+      }
+    }
     window.clearTimeout(draftInputHistoryTimer);
     ensureActiveDraftRecordId();
     if (!currentDraftRecord()) rememberDraftHistory("typed");
@@ -5531,6 +5605,17 @@ console.log("示例代码块");
     batchWriting = true;
     updateWriteButton();
     try {
+      const origins = remoteImageOriginsForMarkdowns(draftQueue.map((item) => item.markdown));
+      if (origins.length) {
+        const permission = await requestRemoteImageAccessForOrigins(origins, latestParsed);
+        if (!permission.ok) {
+          log(
+            permission.error
+              ? `Web image permission unavailable: ${permission.error}. Failed downloads will stay as Markdown links.`
+              : "Web image permission was not granted. Failed downloads will stay as Markdown links."
+          );
+        }
+      }
       while (draftQueue.length > 0) {
         const item = draftQueue[0];
         const result = await importQueueItem(item.id);
@@ -7320,17 +7405,6 @@ console.log("示例代码块");
   els.runPreflight.addEventListener("click", runPreflight);
   els.loadFile.addEventListener("click", loadFile);
   els.loadSmoke?.addEventListener("click", loadSmokeFixture);
-  els.clearDraft.addEventListener("click", () => {
-    if (activeQueueItemId) {
-      removeQueueItem(activeQueueItemId);
-    } else {
-      els.markdown.value = "";
-      saveDraft();
-      analyzeDraft();
-      syncActiveQueueWithDraft();
-    }
-    log("Draft cleared.");
-  });
   els.pickVault.addEventListener("click", chooseVault);
   els.pickVaultSettings.addEventListener("click", chooseVault);
   els.clearVault.addEventListener("click", clearVault);

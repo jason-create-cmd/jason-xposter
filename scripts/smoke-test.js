@@ -20,6 +20,12 @@ assert.equal(manifest.manifest_version, 3, "manifest must be MV3");
 assert.equal(manifest.default_locale, "en", "manifest must declare a default locale");
 assert.equal(manifestMessage(manifest.name), "xPoster", "manifest name must resolve to xPoster");
 assert.equal(pkg.version.replace(/\.0$/, ""), manifest.version, "package and manifest versions must match");
+assert.ok(!manifest.host_permissions, "remote image hosts must not be granted at install time");
+assert.deepEqual(
+  manifest.optional_host_permissions,
+  ["http://*/*", "https://*/*"],
+  "remote image hosts should be optional runtime permissions"
+);
 
 const requiredFiles = [
   "sidepanel.html",
@@ -98,6 +104,7 @@ const coverOnlyPlan = shared.buildPastePlan(
   }
 );
 const contentScriptText = fs.readFileSync(path.join(root, "src/content.js"), "utf8");
+const sidepanelText = fs.readFileSync(path.join(root, "sidepanel.js"), "utf8");
 const statusHelperStart = contentScriptText.indexOf("  function normalizeText");
 const statusHelperEnd = contentScriptText.indexOf("  function showStatus");
 const statusSandbox = {
@@ -164,6 +171,18 @@ assert.equal(
 assert.ok(
   fs.readFileSync(path.join(root, "src/main-world.js"), "utf8").includes("uploadFilesToEditor"),
   "main-world bridge should hand dropped image files to X's own uploader"
+);
+assert.ok(
+  sidepanelText.includes("chrome.permissions.request"),
+  "side panel should request remote image host access only when a draft needs it"
+);
+assert.ok(
+  sidepanelText.includes("chrome.permissions.contains"),
+  "side panel should report remote image host access from runtime permissions"
+);
+assert.ok(
+  sidepanelText.includes("remoteImageOriginsForMarkdowns(draftQueue.map((item) => item.markdown))"),
+  "batch queue writes should request all remote image origins during the user action"
 );
 assert.ok(
   coverOnlyPlan.plan.some(
