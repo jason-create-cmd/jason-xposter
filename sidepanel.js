@@ -7361,6 +7361,24 @@ console.log("示例代码块");
     return String(record?.source?.fileName || "").trim();
   }
 
+  function normalizeRecordTitleToken(value) {
+    return String(value || "")
+      .replace(/\.[a-z0-9]{1,10}$/i, "")
+      .replace(/…$/u, "")
+      .replace(/[\s_.\-—–·•|｜:：/\\()[\]{}【】（）《》"'“”‘’.,，。]+/gu, "")
+      .toLowerCase();
+  }
+
+  function shouldShowRecordFileName(displayTitle, fileName) {
+    const fileText = String(fileName || "").trim();
+    if (!fileText) return false;
+    const titleKey = normalizeRecordTitleToken(displayTitle);
+    const fileKey = normalizeRecordTitleToken(fileText);
+    if (!titleKey || !fileKey) return true;
+    if (titleKey === fileKey) return false;
+    return !(Math.min(titleKey.length, fileKey.length) >= 16 && (titleKey.startsWith(fileKey) || fileKey.startsWith(titleKey)));
+  }
+
   function recordHumanStatus(record) {
     if (record.kind === "import") return "Written to X";
     if (record.kind === "import-error") return "Import failed";
@@ -7623,7 +7641,7 @@ console.log("示例代码块");
     const recordState = recordHumanStatus(record);
     const metaText = recordSourceMeta(record, updatedTime);
     const fileName = recordFileName(record);
-    const fileNameHtml = fileName ? `<span class="record-file-name">${safe(fileName)}</span>` : "";
+    const fileNameHtml = shouldShowRecordFileName(displayTitle, fileName) ? `<span class="record-file-name">${safe(fileName)}</span>` : "";
     const linkAction = articleUrl
       ? `<a class="record-icon-action" href="${safe(articleUrl)}" target="_blank" rel="noopener noreferrer" title="${safe("Open linked page")}" aria-label="${safe("Open linked page")}">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6h-2V7.4l-7.3 7.3-1.4-1.4L16.6 6H14V4ZM5 6h7v2H7v9h9v-5h2v7H5V6Z"/></svg>
