@@ -3609,17 +3609,47 @@ textarea:focus-visible,
 }
 
 .record-history-item {
+  position: relative;
+  overflow: hidden;
   border: 1px solid color-mix(in oklch, var(--line), transparent 26%);
   background: color-mix(in oklch, var(--paper), var(--paper-2) 18%);
   cursor: pointer;
   transition:
     background-color var(--motion-quick) ease,
-    border-color var(--motion-quick) ease;
+    border-color var(--motion-quick) ease,
+    box-shadow var(--motion-quick) ease;
 }
 
-.record-history-item:hover {
-  border-color: color-mix(in oklch, var(--line), var(--ink) 16%);
-  background: color-mix(in oklch, var(--paper-2), var(--paper) 74%);
+.record-history-item::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: color-mix(in oklch, var(--signal), var(--ink) 6%);
+  opacity: 0;
+  transform: scaleY(.48);
+  transform-origin: 50% 50%;
+  transition:
+    opacity var(--motion-quick) ease,
+    transform var(--motion-quick) var(--ease-out-quart);
+  pointer-events: none;
+}
+
+.record-history-item:hover,
+.record-history-item:focus-visible,
+.record-history-item:focus-within {
+  border-color: color-mix(in oklch, var(--signal), var(--line) 30%);
+  background: color-mix(in oklch, var(--signal), var(--paper) 96%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--signal), transparent 90%),
+    0 8px 18px color-mix(in oklch, var(--ink), transparent 94%);
+}
+
+.record-history-item:hover::before,
+.record-history-item:focus-visible::before,
+.record-history-item:focus-within::before {
+  opacity: 1;
+  transform: scaleY(1);
 }
 
 .record-history-item:last-child {
@@ -3627,8 +3657,8 @@ textarea:focus-visible,
 }
 
 .record-history-item:focus-visible {
-  outline: 2px solid color-mix(in oklch, var(--signal), transparent 24%);
-  outline-offset: -2px;
+  outline: 2px solid color-mix(in oklch, var(--signal), transparent 46%);
+  outline-offset: 2px;
 }
 
 .record-draft-card {
@@ -3785,12 +3815,18 @@ textarea:focus-visible,
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  opacity: .66;
-  transition: opacity var(--motion-quick) ease;
+  opacity: .58;
+  transform: translateX(2px);
+  transition:
+    opacity var(--motion-quick) ease,
+    transform var(--motion-quick) var(--ease-out-quart);
 }
 
-.record-history-item:hover .record-action-icons {
+.record-history-item:hover .record-action-icons,
+.record-history-item:focus-visible .record-action-icons,
+.record-history-item:focus-within .record-action-icons {
   opacity: 1;
+  transform: translateX(0);
 }
 
 .record-icon-action {
