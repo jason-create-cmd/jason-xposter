@@ -3752,15 +3752,6 @@ textarea:focus-visible,
   min-width: 0;
 }
 
-.record-action-main {
-  min-width: 0;
-  flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.record-use-button,
 .record-icon-action {
   border: 0;
   background: transparent;
@@ -3771,28 +3762,6 @@ textarea:focus-visible,
     border-color var(--motion-quick) ease,
     color var(--motion-quick) ease,
     transform var(--motion-quick) var(--ease-out-quart);
-}
-
-.record-use-button {
-  min-height: 30px;
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 11px;
-  border: 1px solid color-mix(in oklch, var(--ink), var(--line) 72%);
-  background: color-mix(in oklch, var(--paper), var(--paper-2) 28%);
-  color: var(--ink);
-  font-size: 11.5px;
-  font-weight: 760;
-  white-space: nowrap;
-}
-
-.record-use-button svg {
-  width: 14px;
-  height: 14px;
-  flex: 0 0 auto;
-  fill: currentColor;
 }
 
 .record-action-icons {
@@ -3823,15 +3792,8 @@ textarea:focus-visible,
   fill: currentColor;
 }
 
-.record-use-button:hover,
 .record-icon-action:hover {
   background: color-mix(in oklch, var(--ink), var(--paper) 92%);
-  color: var(--ink);
-}
-
-.record-use-button:hover {
-  border-color: color-mix(in oklch, var(--ink), var(--line) 58%);
-  background: color-mix(in oklch, var(--paper-2), var(--paper) 42%);
   color: var(--ink);
 }
 
@@ -3845,7 +3807,6 @@ textarea:focus-visible,
   color: color-mix(in oklch, var(--ink), var(--muted) 16%);
 }
 
-.record-use-button:active,
 .record-icon-action:active {
   transform: translateY(1px) scale(0.98);
 }
@@ -4909,18 +4870,6 @@ textarea:focus-visible,
     align-items: flex-end;
   }
 
-  .record-action-main {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 5px;
-    width: 100%;
-  }
-
-  .record-use-button {
-    justify-content: flex-start;
-    width: auto;
-  }
-
   .record-action-icons {
     justify-content: flex-end;
   }
@@ -5097,7 +5046,6 @@ textarea:focus-visible,
   .secondary,
   .compact,
   .record-search input,
-  .record-use-button,
   .record-icon-action,
   .drop-status-dismiss,
   .theme-control span {
@@ -5117,7 +5065,6 @@ textarea:focus-visible,
   .text-button,
   .dock-button,
   .jump-button,
-  .record-use-button,
   .record-edit-actions .primary,
   .record-edit-actions .secondary {
     padding-inline: 12px;

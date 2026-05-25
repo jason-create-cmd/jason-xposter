@@ -7642,13 +7642,7 @@ console.log("示例代码块");
           </header>
           <p class="record-draft-preview">${safe(preview)}</p>
           <div class="record-actions">
-            <div class="record-action-main">
-              <button class="record-use-button" type="button" data-record-action="restore" data-record-id="${safe(record.id)}" title="${safe("Use this saved Markdown in Pending.")}">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v2H5V4Zm0 4h8v2H5V8Zm0 4h7v2H5v-2Zm11 1V8h2v5h3l-4 4-4-4h3Zm-3 6h8v2h-8v-2Z"/></svg>
-                <span>${safe("Use")}</span>
-              </button>
-              ${summaryHtml}
-            </div>
+            ${summaryHtml}
             <div class="record-action-icons" aria-label="${safe("Record actions")}">
               <button class="record-icon-action" type="button" data-record-action="copy-markdown" data-record-id="${safe(record.id)}" title="${safe("Copy this saved Markdown.")}" aria-label="${safe("Copy this saved Markdown.")}">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7h10v13H8V7Zm2 2v9h6V9h-6ZM5 4h10v2H7v10H5V4Z"/></svg>

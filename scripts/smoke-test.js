@@ -393,6 +393,14 @@ assert.ok(
   "record history should render source file names in their own metadata line"
 );
 assert.ok(
+  !sidepanelText.includes('class="record-use-button"') &&
+    !sidepanelText.includes('data-record-action="restore"') &&
+    !sidepanelCss.includes(".record-use-button") &&
+    sidepanelText.includes('primaryLabel: "Use draft"') &&
+    sidepanelText.includes("function restoreRecordMarkdownText"),
+  "record cards should not show a prominent Use button; restore should stay inside the edit sheet"
+);
+assert.ok(
   sidepanelHtml.includes('class="record-search-meta"') &&
     sidepanelHtml.includes('id="recordClearConfirm"') &&
     sidepanelHtml.includes('id="confirmRecordClear"') &&
