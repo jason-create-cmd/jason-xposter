@@ -260,6 +260,11 @@ assert.ok(
     contentScriptText.includes("height = Math.min(96") &&
     contentScriptText.includes("function dropHintSurfaceKind") &&
     contentScriptText.includes('if (intent === "article") return "page-dock";') &&
+    contentScriptText.includes("--xposter-drop-blue: #1d9bf0") &&
+    contentScriptText.includes('[data-mode="markdown"][data-surface="page-dock"]::before') &&
+    contentScriptText.includes("__xposter_drop_rail") &&
+    contentScriptText.includes("__xposter_drop_mark_hint") &&
+    contentScriptText.includes('[data-mode="markdown"][data-state="ready"] .__xposter_drop_mark') &&
     contentScriptText.includes("--xposter-drop-progress") &&
     contentScriptText.includes("Open X Article draft") &&
     contentScriptText.includes("Write to this X Article") &&

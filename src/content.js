@@ -3161,6 +3161,7 @@
         --xposter-drop-ink: #0f1419;
         --xposter-drop-muted: #536471;
         --xposter-drop-accent: #536471;
+        --xposter-drop-blue: #1d9bf0;
         --xposter-drop-progress: 0%;
         color: #0f1419;
         font: 14px/1.45 ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif;
@@ -3277,6 +3278,31 @@
       #${DROP_HINT_ID}[data-surface="page-dock"] .__xposter_drop_frame {
         width: min(620px, 100%);
       }
+      #${DROP_HINT_ID}[data-mode="markdown"] {
+        --xposter-drop-accent: var(--xposter-drop-blue);
+        --xposter-drop-paper: rgba(246, 251, 255, 0.96);
+        --xposter-drop-line: rgba(29, 155, 240, 0.28);
+        --xposter-drop-dash: rgba(29, 155, 240, 0.40);
+      }
+      #${DROP_HINT_ID}[data-mode="markdown"][data-surface="page-dock"]::before {
+        background:
+          linear-gradient(180deg, rgba(29, 155, 240, 0.10), rgba(29, 155, 240, 0.03)),
+          var(--xposter-drop-paper);
+        box-shadow:
+          0 -10px 34px rgba(29, 155, 240, 0.16),
+          inset 0 1px 0 rgba(29, 155, 240, 0.34),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.68);
+      }
+      #${DROP_HINT_ID}[data-mode="markdown"][data-surface="page-dock"]::after {
+        background:
+          linear-gradient(90deg, transparent 0%, rgba(29, 155, 240, 0.0) 18%, rgba(29, 155, 240, 0.62) 50%, rgba(29, 155, 240, 0.0) 82%, transparent 100%) 0 0 / 180px 100% no-repeat,
+          linear-gradient(90deg, var(--xposter-drop-accent) 0 var(--xposter-drop-progress), transparent var(--xposter-drop-progress) 100%),
+          rgba(29, 155, 240, 0.16);
+        animation: __xposter_drop_rail 1.7s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+      }
+      #${DROP_HINT_ID}[data-mode="markdown"][data-state="ready"] .__xposter_drop_mark {
+        animation: __xposter_drop_mark_hint 1.45s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+      }
       #${DROP_HINT_ID}[data-surface="editor"] {
         min-height: 64px;
         padding: 10px 14px;
@@ -3351,10 +3377,30 @@
         0%, 100% { transform: scale(1); opacity: 1; }
         50% { transform: scale(0.94); opacity: 0.72; }
       }
+      @keyframes __xposter_drop_rail {
+        0% { background-position: -180px 0, 0 0, 0 0; }
+        100% { background-position: calc(100% + 180px) 0, 0 0, 0 0; }
+      }
+      @keyframes __xposter_drop_mark_hint {
+        0%, 100% {
+          transform: scale(1);
+          box-shadow:
+            inset 0 0 0 4px rgba(255, 255, 255, 0.66),
+            0 0 0 0 rgba(29, 155, 240, 0.22);
+        }
+        50% {
+          transform: scale(0.96);
+          box-shadow:
+            inset 0 0 0 4px rgba(255, 255, 255, 0.66),
+            0 0 0 7px rgba(29, 155, 240, 0);
+        }
+      }
       @media (prefers-reduced-motion: reduce) {
         #${DROP_HINT_ID},
         #${DROP_HINT_ID} .__xposter_drop_frame,
-        #${DROP_HINT_ID}[data-state="processing"] .__xposter_drop_mark {
+        #${DROP_HINT_ID}[data-state="processing"] .__xposter_drop_mark,
+        #${DROP_HINT_ID}[data-mode="markdown"][data-state="ready"] .__xposter_drop_mark,
+        #${DROP_HINT_ID}[data-surface="page-dock"]::after {
           animation: none;
         }
       }
@@ -3365,6 +3411,11 @@
           --xposter-drop-dash: rgba(231, 233, 234, 0.22);
           --xposter-drop-ink: #e7e9ea;
           --xposter-drop-muted: #aeb4b9;
+        }
+        #${DROP_HINT_ID}[data-mode="markdown"] {
+          --xposter-drop-paper: rgba(15, 29, 43, 0.96);
+          --xposter-drop-line: rgba(29, 155, 240, 0.34);
+          --xposter-drop-dash: rgba(29, 155, 240, 0.42);
         }
         #${DROP_HINT_ID}::before {
           box-shadow:
