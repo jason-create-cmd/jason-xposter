@@ -347,6 +347,10 @@ assert.ok(
 assert.ok(
   mainWorldText.includes("const MEDIA_UPLOAD_BASE_TIMEOUT_MS = 90000") &&
     mainWorldText.includes("const MEDIA_UPLOAD_MAX_TIMEOUT_MS = 150000") &&
+    mainWorldText.includes("const MEDIA_UPLOAD_PROGRESS_HEARTBEAT_MS = 15000") &&
+    mainWorldText.includes("progress(`Uploading image ${index}/${total}...`)") &&
+    contentScriptText.includes("const MAIN_WORLD_SILENCE_TIMEOUT_MS = 180000") &&
+    contentScriptText.includes("}, MAIN_WORLD_SILENCE_TIMEOUT_MS);") &&
     mainWorldText.includes("X media upload took too long. X may be throttling this draft") &&
     mainWorldText.includes("timeoutMs") &&
     !mainWorldText.includes("Timed out waiting for X media upload") &&

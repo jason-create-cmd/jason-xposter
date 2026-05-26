@@ -7,6 +7,7 @@
   const MEDIA_UPLOAD_BASE_TIMEOUT_MS = 90000;
   const MEDIA_UPLOAD_PER_ITEM_TIMEOUT_MS = 2500;
   const MEDIA_UPLOAD_MAX_TIMEOUT_MS = 150000;
+  const MEDIA_UPLOAD_PROGRESS_HEARTBEAT_MS = 15000;
   const MEDIA_UPLOAD_TIMEOUT_ERROR =
     "X media upload took too long. X may be throttling this draft, especially with many images. Wait a moment, then write again or split the article.";
 
@@ -463,9 +464,16 @@
       MEDIA_UPLOAD_BASE_TIMEOUT_MS + Math.max(0, Number(context.total || 0) - 1) * MEDIA_UPLOAD_PER_ITEM_TIMEOUT_MS
     );
     const deadline = Date.now() + timeoutMs;
+    let nextProgressAt = Date.now() + MEDIA_UPLOAD_PROGRESS_HEARTBEAT_MS;
     while (Date.now() < deadline) {
       throwIfCancelled();
       await sleep(350);
+      if (Date.now() >= nextProgressAt) {
+        const index = Number(context.index || 0);
+        const total = Number(context.total || 0);
+        if (index && total) progress(`Uploading image ${index}/${total}...`);
+        nextProgressAt = Date.now() + MEDIA_UPLOAD_PROGRESS_HEARTBEAT_MS;
+      }
       draftNode = findDraftStateNode() || draftNode;
       const contentState = draftNode.props.editorState.getCurrentContent();
       let found = null;

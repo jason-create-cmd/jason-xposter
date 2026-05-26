@@ -1946,7 +1946,7 @@ textarea:focus-visible,
   position: relative;
   overflow: hidden;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 5px 9px;
   align-items: center;
   padding: 8px 9px;
@@ -2027,21 +2027,20 @@ textarea:focus-visible,
 .progress-cancel {
   position: relative;
   z-index: 1;
-  overflow: hidden;
-  min-height: 28px;
-  padding: 0 9px;
-  border: 1px solid color-mix(in oklch, var(--danger), var(--line) 48%);
-  background: color-mix(in oklch, var(--danger), var(--paper) 92%);
-  color: var(--danger);
+  justify-self: end;
+  min-width: 0;
+  min-height: 0;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: color-mix(in oklch, var(--danger), var(--muted) 42%);
   cursor: pointer;
   font-size: 11px;
-  font-weight: 820;
+  font-weight: 760;
+  line-height: 1.2;
   transition:
-    background-color var(--motion-quick) ease,
-    border-color var(--motion-quick) ease,
     color var(--motion-quick) ease,
-    opacity var(--motion-quick) ease,
-    transform var(--motion-quick) var(--ease-out-quart);
+    opacity var(--motion-quick) ease;
 }
 
 .progress-cancel[hidden] {
@@ -2049,27 +2048,26 @@ textarea:focus-visible,
 }
 
 .progress-cancel:hover {
-  background: color-mix(in oklch, var(--danger), var(--paper) 86%);
-  transform: translateY(-1px);
+  color: var(--danger);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
 .progress-cancel:active {
-  transform: translateY(0) scale(0.98);
+  color: color-mix(in oklch, var(--danger), var(--ink) 18%);
+}
+
+.progress-cancel:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--danger), transparent 48%);
+  outline-offset: 3px;
 }
 
 .progress-cancel:disabled {
   cursor: default;
-  opacity: 0.72;
-  transform: none;
-}
-
-.progress-cancel:disabled::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--danger), transparent 78%), transparent);
-  transform: translateX(-120%);
-  animation: xposter-cancel-requested 1.2s linear infinite;
+  color: var(--muted);
+  opacity: 0.7;
+  text-decoration: none;
 }
 
 .inline-write-status[data-tone="work"] .progress-state,
@@ -2144,15 +2142,6 @@ textarea:focus-visible,
   }
   to {
     background-position: -60% 0, 0 0;
-  }
-}
-
-@keyframes xposter-cancel-requested {
-  from {
-    transform: translateX(-120%);
-  }
-  to {
-    transform: translateX(120%);
   }
 }
 
@@ -2341,7 +2330,6 @@ textarea:focus-visible,
   .draft-queue-item[data-status="writing"] .draft-queue-state::before,
   .record-edit-dialog,
   .record-edit-sheet,
-  .progress-cancel:disabled::after,
   .review-list li[data-note="media-limit"],
   .ledger-list li[data-ledger-kind="media-limit"],
   .inline-write-status[data-tone="work"],
@@ -3986,47 +3974,37 @@ textarea:focus-visible,
 
 .setting-checks {
   display: grid;
-  gap: 8px;
+  gap: 0;
   margin: 0;
   padding: 0;
-  border: 0;
+  border-block: 1px solid var(--line);
 }
 
 .setting-checks label {
   position: relative;
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
-  gap: 11px;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
   align-items: center;
-  min-height: 52px;
-  padding: 10px 12px;
-  border: 1px solid color-mix(in oklch, var(--line), transparent 10%);
-  background:
-    linear-gradient(90deg, transparent 0 3px, color-mix(in oklch, var(--line), transparent 72%) 3px 4px, transparent 4px),
-    color-mix(in oklch, var(--paper-2), var(--paper) 66%);
+  min-height: 48px;
+  padding: 9px 0;
+  border: 0;
+  background: transparent;
   cursor: pointer;
   transition:
-    border-color var(--motion-quick) ease,
-    background-color var(--motion-quick) ease,
-    box-shadow var(--motion-quick) ease,
-    transform var(--motion-quick) var(--ease-out-quart);
+    background-color var(--motion-quick) ease;
+}
+
+.setting-checks label + label {
+  border-top: 1px solid color-mix(in oklch, var(--line), transparent 18%);
 }
 
 .setting-checks label:hover {
-  border-color: color-mix(in oklch, var(--line), var(--signal) 22%);
-  background:
-    linear-gradient(90deg, transparent 0 3px, color-mix(in oklch, var(--signal), transparent 48%) 3px 4px, transparent 4px),
-    color-mix(in oklch, var(--paper), var(--paper-2) 17%);
+  background: color-mix(in oklch, var(--paper-2), transparent 68%);
 }
 
 .setting-checks label:has(input:checked) {
-  border-color: color-mix(in oklch, var(--signal), var(--line) 46%);
-  background:
-    linear-gradient(90deg, var(--signal) 0 4px, transparent 4px),
-    color-mix(in oklch, var(--signal), var(--paper) 91%);
-  box-shadow:
-    inset 0 0 0 1px color-mix(in oklch, var(--signal), transparent 78%),
-    0 8px 20px rgba(15, 20, 25, 0.045);
+  background: transparent;
 }
 
 .setting-checks label:has(input:checked) strong {
@@ -4034,56 +4012,46 @@ textarea:focus-visible,
 }
 
 .setting-checks label:active {
-  transform: translateY(1px);
+  background: color-mix(in oklch, var(--paper-2), transparent 55%);
 }
 
 .setting-checks input {
   -webkit-appearance: none;
   appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   margin: 0;
   align-self: center;
   border: 1px solid color-mix(in oklch, var(--line), var(--ink) 24%);
-  border-radius: 5px;
-  background:
-    linear-gradient(180deg, color-mix(in oklch, var(--paper), var(--paper-2) 18%), var(--paper));
+  border-radius: 3px;
+  background: var(--paper);
   display: grid;
   place-items: center;
   color: var(--signal-ink);
-  box-shadow: inset 0 1px 0 color-mix(in oklch, #ffffff, transparent 30%);
+  box-shadow: none;
   transition:
     background-color var(--motion-quick) ease,
-    border-color var(--motion-quick) ease,
-    box-shadow var(--motion-quick) ease,
-    transform var(--motion-quick) var(--ease-out-quart);
+    border-color var(--motion-quick) ease;
 }
 
 .setting-checks input::before {
   content: "";
-  width: 9px;
-  height: 5px;
+  width: 8px;
+  height: 4px;
   border-left: 2px solid currentColor;
   border-bottom: 2px solid currentColor;
-  transform: translateY(-1px) rotate(-45deg) scale(.72);
+  transform: translateY(-1px) rotate(-45deg);
   opacity: 0;
-  transition:
-    opacity var(--motion-quick) ease,
-    transform var(--motion-quick) var(--ease-out-quart);
+  transition: opacity var(--motion-quick) ease;
 }
 
 .setting-checks input:checked {
   border-color: var(--signal);
   background: var(--signal);
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklch, #ffffff, transparent 56%),
-    0 0 0 3px color-mix(in oklch, var(--signal), transparent 84%);
-  transform: scale(1.02);
 }
 
 .setting-checks input:checked::before {
   opacity: 1;
-  transform: translateY(-1px) rotate(-45deg) scale(1);
 }
 
 .setting-checks input:focus-visible {

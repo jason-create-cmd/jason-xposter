@@ -19,6 +19,7 @@
   const PENDING_ARTICLE_IMPORT_TTL_MS = 10 * 60 * 1000;
   const X_ARTICLE_MEDIA_SOFT_LIMIT = 25;
   const X_ARTICLE_MEDIA_HEADROOM_THRESHOLD = 20;
+  const MAIN_WORLD_SILENCE_TIMEOUT_MS = 180000;
   const X_ARTICLE_MEDIA_LIMIT_WARNING =
     "Image plan: {count}/25, above xPoster's verified X Article limit. Split the draft or remove images before writing to avoid a late X rejection.";
   const X_ARTICLE_MEDIA_HEADROOM_NOTE =
@@ -877,7 +878,7 @@
           window.removeEventListener("message", listener);
           if (state.activeRun?.reject === reject) state.activeRun = null;
           reject(new Error("X editor bridge did not respond"));
-        }, 60000);
+        }, MAIN_WORLD_SILENCE_TIMEOUT_MS);
       };
       const listener = (event) => {
         if (event.source !== window || event.data?.source !== CHANNEL_FROM_MAIN) return;
