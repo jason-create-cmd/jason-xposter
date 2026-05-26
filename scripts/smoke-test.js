@@ -259,8 +259,11 @@ assert.ok(
     contentScriptText.includes("width: window.innerWidth") &&
     contentScriptText.includes("height = Math.min(96") &&
     contentScriptText.includes("function dropHintSurfaceKind") &&
+    contentScriptText.includes('if (intent === "article") return "page-dock";') &&
     contentScriptText.includes("--xposter-drop-progress") &&
     contentScriptText.includes("Open X Article draft") &&
+    contentScriptText.includes("Write to this X Article") &&
+    contentScriptText.includes("Release in the bottom bar to write this Markdown here.") &&
     contentScriptText.includes("xPoster page drop target") &&
     contentScriptText.includes("function setDropHintProcessing") &&
     contentScriptText.includes("updateVisibleDropHintCopy") &&
@@ -271,18 +274,19 @@ assert.ok(
     contentScriptText.includes("function isExplicitImageInsertDrop") &&
     contentScriptText.includes("function hasImageDropPayload") &&
     contentScriptText.includes("function articleBodyHasFocus") &&
-    contentScriptText.includes('event.dataTransfer.dropEffect = intent === "article-outside" ? "none" : "copy"'),
-  "X page drag feedback should use a bottom full-width dock off-article and a short article-body dock with processing feedback"
+    contentScriptText.includes('event.dataTransfer.dropEffect = "copy"'),
+  "X page Markdown drag feedback should use the same bottom full-width dock on home and Article editor pages while image/folder targets keep a short editor dock"
 );
 assert.ok(
   contentScriptText.includes("if (!event?.altKey) return false;") &&
-    contentScriptText.includes("if (canDropIntoCurrentArticle(event) && isExplicitImageInsertDrop(dataTransfer, event)) return \"article\";") &&
+    contentScriptText.includes('if (isExplicitImageInsertDrop(dataTransfer, event)) return "image";') &&
+    contentScriptText.includes('if (isDirectoryDrop(dataTransfer, event)) return "folder";') &&
+    contentScriptText.includes('if (isSingleMarkdownDrop(dataTransfer)) return "article";') &&
     contentScriptText.includes("if (!articleBodyHasFocus()) return false;") &&
-    contentScriptText.includes("if (canDropIntoCurrentArticle(event) && isXposterDefaultDropCandidate(dataTransfer)) return \"article\";") &&
-    contentScriptText.includes("if (isEditorRoute() && findEditor() && isXposterDefaultDropCandidate(dataTransfer)) return \"article-outside\";") &&
-    contentScriptText.includes("function isXposterDefaultDropCandidate") &&
     !contentScriptText.includes('if (types.includes("text/plain") || types.includes("text/markdown")) return true;') &&
     !contentScriptText.includes("function isXposterDropCandidate") &&
+    !contentScriptText.includes("function isXposterDefaultDropCandidate") &&
+    !contentScriptText.includes('"article-outside"') &&
     !contentScriptText.includes("if (files.some(isImageFile)) return true;") &&
     !contentScriptText.includes("return items.some(isLikelyMarkdownTransferItem) || items.some(isLikelyImageTransferItem) || items.some(isDirectoryTransferItem);") &&
     contentScriptText.includes("Place the cursor in the article body before dropping an image."),

@@ -61,10 +61,10 @@
     "Markdown draft sent to the side panel.": "Markdown 草稿已发送到侧边栏。",
     "Could not send Markdown to the side panel": "无法发送 Markdown 到侧边栏",
     "These Markdown files were already queued or too large to save together.": "这些 Markdown 文件已在队列中，或整体过大无法保存。",
-    "Drop on the article body": "拖到文章正文区域",
-    "Release inside the highlighted editor area to write into this article.": "在高亮编辑区域内松开，即可写入这篇文章。",
     "Open X Article draft": "打开 X 文章草稿",
     "Release to open X Articles and write this Markdown.": "松开后打开 X 文章并写入这份 Markdown。",
+    "Write to this X Article": "写入当前 X 文章",
+    "Release in the bottom bar to write this Markdown here.": "拖到底部承接区松开，即可写入这篇文章。",
     "Queue Markdown drafts": "加入 Markdown 草稿队列",
     "Release to add them to the xPoster side panel.": "松开后加入 xPoster 侧边栏。",
     "Send Markdown to side panel": "发送 Markdown 到侧边栏",
@@ -2633,7 +2633,7 @@
       if (intent === "none") return;
       event.preventDefault();
       showDropHint(event.dataTransfer, event, intent);
-      event.dataTransfer.dropEffect = intent === "article-outside" ? "none" : "copy";
+      event.dataTransfer.dropEffect = "copy";
     }, true);
     document.addEventListener("dragleave", (event) => {
       if (isLeavingDocument(event)) hideDropHint();
@@ -2641,12 +2641,6 @@
     document.addEventListener("drop", async (event) => {
       const intent = dropIntentForEvent(event);
       if (intent === "none") return;
-      if (intent === "article-outside") {
-        event.preventDefault();
-        event.stopPropagation();
-        hideDropHint();
-        return;
-      }
       const files = Array.from(event.dataTransfer.files || []);
       const markdownFiles = files.filter(isMarkdownFile);
       const imageFiles = markdownFiles.length ? [] : imageFilesFromTransfer(event.dataTransfer);
@@ -2728,16 +2722,11 @@
     if (!dataTransfer) return "none";
     const sidePanelIntent = sidePanelMarkdownDropIntent(dataTransfer);
     if (sidePanelIntent === "sidepanel-queue") return sidePanelIntent;
+    if (isExplicitImageInsertDrop(dataTransfer, event)) return "image";
+    if (isDirectoryDrop(dataTransfer, event)) return "folder";
     if (isSingleMarkdownDrop(dataTransfer)) return "article";
-    if (canDropIntoCurrentArticle(event) && isExplicitImageInsertDrop(dataTransfer, event)) return "article";
-    if (canDropIntoCurrentArticle(event) && isXposterDefaultDropCandidate(dataTransfer)) return "article";
     if (sidePanelIntent) return sidePanelIntent;
-    if (isEditorRoute() && findEditor() && isXposterDefaultDropCandidate(dataTransfer)) return "article-outside";
     return "none";
-  }
-
-  function canDropIntoCurrentArticle(event) {
-    return Boolean(isEditorRoute() && findEditor() && (!event || isDropEventOverSurface(event, "article")));
   }
 
   function sidePanelMarkdownDropIntent(dataTransfer) {
@@ -2794,23 +2783,18 @@
     return Boolean(file?.name && /\.(md|markdown|mdown|mkd|txt)$/i.test(file.name));
   }
 
-  function isXposterDefaultDropCandidate(dataTransfer) {
-    if (hasMarkdownText(dataTransfer)) return true;
-    const types = Array.from(dataTransfer?.types || []);
-    if (types.includes("text/markdown")) return true;
-    if (!hasFiles(dataTransfer)) return false;
-    const files = Array.from(dataTransfer.files || []);
-    if (files.some(isMarkdownFile)) return true;
-    const items = Array.from(dataTransfer.items || []);
-    return items.some(isLikelyMarkdownTransferItem) || items.some(isDirectoryTransferItem);
-  }
-
   function isExplicitImageInsertDrop(dataTransfer, event = null) {
     if (!event?.altKey) return false;
     if (!isEditorRoute() || !findEditor()) return false;
-    if (!isDropEventOverSurface(event, "article")) return false;
+    if (!isDropEventOverSurface(event, "image")) return false;
     if (!articleBodyHasFocus()) return false;
     return hasImageDropPayload(dataTransfer);
+  }
+
+  function isDirectoryDrop(dataTransfer, event = null) {
+    if (!findDirectoryTransferItem(dataTransfer)) return false;
+    if (!isEditorRoute() || !findEditor()) return false;
+    return !event || isDropEventOverSurface(event, "folder");
   }
 
   function hasImageDropPayload(dataTransfer) {
@@ -2904,7 +2888,6 @@
     hint.dataset.mode = mode;
     hint.dataset.state = "ready";
     hint.dataset.surface = surface;
-    hint.dataset.target = intent === "article-outside" ? "outside" : "inside";
     const title = hint.querySelector("strong");
     const detail = hint.querySelector("p");
     const copy = dropHintCopy(mode, intent);
@@ -2914,10 +2897,9 @@
 
   function dropHintCopy(mode, intent = "") {
     if (intent === "article") {
-      return { title: "Open X Article draft", detail: "Release to open X Articles and write this Markdown." };
-    }
-    if (intent === "article-outside") {
-      return { title: "Drop on the article body", detail: "Release inside the highlighted editor area to write into this article." };
+      return isEditorRoute() && findEditor()
+        ? { title: "Write to this X Article", detail: "Release in the bottom bar to write this Markdown here." }
+        : { title: "Open X Article draft", detail: "Release to open X Articles and write this Markdown." };
     }
     switch (mode) {
       case "sidepanel-queue":
@@ -3007,7 +2989,7 @@
 
   function dropHintSurfaceKind(intent = "article") {
     if (intent === "sidepanel-draft" || intent === "sidepanel-queue") return "page-dock";
-    if (intent === "article" && !canDropIntoCurrentArticle(null)) return "page-dock";
+    if (intent === "article") return "page-dock";
     return "editor";
   }
 
@@ -3142,6 +3124,8 @@
   function dropHintMode(dataTransfer, intent = "") {
     if (intent === "sidepanel-queue") return "sidepanel-queue";
     if (intent === "sidepanel-draft") return "sidepanel";
+    if (intent === "image") return "image";
+    if (intent === "folder") return "folder";
     if (!dataTransfer) return "markdown";
     if (hasMarkdownText(dataTransfer)) return "markdown";
     const files = Array.from(dataTransfer.files || []);
@@ -3344,12 +3328,6 @@
       }
       #${DROP_HINT_ID}[data-mode="folder"] {
         --xposter-drop-accent: #6b665e;
-      }
-      #${DROP_HINT_ID}[data-target="outside"] {
-        opacity: 0.78;
-      }
-      #${DROP_HINT_ID}[data-target="outside"]::after {
-        opacity: 0.38;
       }
       #${DROP_HINT_ID}[data-state="processing"] {
         --xposter-drop-accent: #2f6f68;
