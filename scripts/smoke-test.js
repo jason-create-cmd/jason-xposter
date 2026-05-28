@@ -963,6 +963,9 @@ assert.ok(
       ".draft-inline-preview",
       ".draft-editor-status",
       ".draft-editor-status > span",
+      "--draft-content-font:",
+      '"PingFang SC"',
+      "font-family: var(--draft-content-font);",
       ".draft-editor-mode-toggle",
       ".draft-editor-toolbar button .editor-command-icon",
       "stroke-linecap: round;",
@@ -982,6 +985,9 @@ assert.ok(
       ".composer {\n  position: relative;\n  height: 100%;\n  min-height: 0;\n  align-self: stretch;\n  align-content: start;",
       "grid-template-rows: auto auto auto auto;",
       ".draft-editor-status span {\n"
+    ]) &&
+    excludesAll(sidepanelCss, [
+      "font-family: ui-serif, Georgia, \"Times New Roman\", serif;"
     ]),
   "side panel should use a lightweight native textarea editor with MiniGFM read preview, one status-bar mode toggle, responsive controls, and adapter-based draft reads"
 );

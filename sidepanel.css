@@ -20,6 +20,7 @@
   --draft-editor-block-size: var(--draft-editor-roomy-block-size);
   --draft-editor-inset-block: 18px 20px;
   --draft-editor-inset-inline: 16px;
+  --draft-content-font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei", "Microsoft JhengHei", "Noto Sans CJK SC", "Noto Sans CJK TC", "Noto Sans JP", "Noto Sans KR", sans-serif;
   --motion-quick: 140ms;
   --motion-medium: 220ms;
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
@@ -1226,7 +1227,7 @@ h2 {
   overflow: auto;
   border: 0;
   background: transparent;
-  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  font-family: var(--draft-content-font);
   font-size: 15px;
   line-height: 1.68;
   letter-spacing: 0;
@@ -1369,7 +1370,7 @@ h2 {
   max-width: 68ch;
   padding-top: 0;
   color: var(--ink);
-  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  font-family: var(--draft-content-font);
   font-size: 15px;
   line-height: 1.68;
 }
@@ -4079,7 +4080,7 @@ textarea:focus-visible,
   padding: var(--draft-editor-inset-block) var(--draft-editor-inset-inline);
   border: 0;
   background: transparent;
-  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  font-family: var(--draft-content-font);
   font-size: 15px;
   line-height: 1.68;
   letter-spacing: 0;
