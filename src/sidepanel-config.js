@@ -8,6 +8,8 @@
   const STORAGE_SUCCESS_FEEDBACK = "xposter_success_feedback";
   const STORAGE_RECORD_HISTORY = "xposter_publish_record_history";
   const STORAGE_DRAFT_QUEUE = "xposter_publish_queue";
+  const STORAGE_JASON_BLOG_SETTINGS = "xposter_jason_blog_settings";
+  const STORAGE_JASON_BLOG_CACHE = "xposter_jason_blog_cache";
 
   const X_ARTICLE_MEDIA_LIMIT_WARNING =
     "Images: {count}/{limit}. Remove {extra} image(s) before writing.";
@@ -53,6 +55,8 @@
     STORAGE_SUCCESS_FEEDBACK,
     STORAGE_RECORD_HISTORY,
     STORAGE_DRAFT_QUEUE,
+    STORAGE_JASON_BLOG_SETTINGS,
+    STORAGE_JASON_BLOG_CACHE,
     MAX_RECORD_HISTORY: 30,
     MAX_DRAFT_QUEUE: 24,
     MAX_DRAFT_QUEUE_STORAGE_BYTES: 4 * 1024 * 1024,
@@ -80,12 +84,16 @@
     STARTUP_STORAGE_KEYS: [
       STORAGE_DRAFT,
       STORAGE_DRAFT_QUEUE,
+    STORAGE_JASON_BLOG_SETTINGS,
+    STORAGE_JASON_BLOG_CACHE,
       STORAGE_THEME,
       STORAGE_LANGUAGE,
       STORAGE_IMPORT_OPTIONS,
       STORAGE_ARTICLE_EXPORT_SETTINGS,
       STORAGE_SUCCESS_FEEDBACK,
-      STORAGE_LIVE_RESULT
+      STORAGE_LIVE_RESULT,
+      STORAGE_JASON_BLOG_SETTINGS,
+      STORAGE_JASON_BLOG_CACHE
     ],
     SYNTAX_HIGHLIGHT_DETAIL_LIMIT: 60000,
     THEME_MODES: new Set(["system", "light", "dark"]),

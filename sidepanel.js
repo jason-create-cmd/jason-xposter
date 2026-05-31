@@ -16,6 +16,8 @@
     STORAGE_SUCCESS_FEEDBACK,
     STORAGE_RECORD_HISTORY,
     STORAGE_DRAFT_QUEUE,
+    STORAGE_JASON_BLOG_SETTINGS,
+    STORAGE_JASON_BLOG_CACHE,
     MAX_RECORD_HISTORY,
     MAX_DRAFT_QUEUE,
     MAX_DRAFT_QUEUE_STORAGE_BYTES,
@@ -62,6 +64,10 @@
   let latestEvidence = null;
   let recordHistory = [];
   let draftQueue = [];
+  let jasonBlogSettings = { apiUrl: "https://blog.operonai.com", apiToken: "" };
+  let jasonBlogCache = { site: null, stats: null, posts: [], synced_at: null };
+  let jasonBlogBusy = false;
+  let jasonBlogError = "";
   let draftQueueMediaReady = true;
   let activeQueueItemId = null;
   let recordSearchQuery = "";
@@ -789,6 +795,314 @@
       return;
     }
     applySuccessFeedbackOptions(successFeedbackOptions);
+  }
+
+
+  function normalizeJasonBlogUrl(value) {
+    const raw = String(value || "").trim() || "https://blog.operonai.com";
+    const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    try {
+      const url = new URL(withProtocol);
+      if (url.protocol !== "http:" && url.protocol !== "https:") return "https://blog.operonai.com";
+      url.pathname = url.pathname.replace(/\/+$/, "");
+      url.search = "";
+      url.hash = "";
+      return url.toString().replace(/\/$/, "");
+    } catch {
+      return "https://blog.operonai.com";
+    }
+  }
+
+  function normalizeJasonBlogSettings(value = {}) {
+    return {
+      apiUrl: normalizeJasonBlogUrl(value.apiUrl),
+      apiToken: String(value.apiToken || "").trim()
+    };
+  }
+
+  function normalizeJasonBlogCache(value = {}) {
+    const posts = Array.isArray(value.posts) ? value.posts.filter((post) => post && typeof post === "object") : [];
+    return {
+      site: value.site && typeof value.site === "object" ? value.site : null,
+      stats: value.stats && typeof value.stats === "object" ? value.stats : null,
+      posts,
+      synced_at: value.synced_at || value.syncedAt || null
+    };
+  }
+
+  function jasonBlogHost() {
+    try {
+      return new URL(jasonBlogSettings.apiUrl).host;
+    } catch {
+      return "blog.operonai.com";
+    }
+  }
+
+  function jasonBlogHasToken() {
+    return Boolean(jasonBlogSettings.apiToken);
+  }
+
+  function jasonBlogPermissionPattern() {
+    try {
+      return `${new URL(jasonBlogSettings.apiUrl).origin}/*`;
+    } catch {
+      return "https://blog.operonai.com/*";
+    }
+  }
+
+  async function ensureJasonBlogPermission() {
+    if (!hasChromeApi() || !chrome.permissions?.contains || !chrome.permissions?.request) return true;
+    const origin = jasonBlogPermissionPattern();
+    try {
+      if (await chrome.permissions.contains({ origins: [origin] })) return true;
+      return await chrome.permissions.request({ origins: [origin] });
+    } catch {
+      return false;
+    }
+  }
+
+  function syncJasonBlogControls() {
+    if (els.jasonBlogUrlInput) els.jasonBlogUrlInput.value = jasonBlogSettings.apiUrl;
+    if (els.jasonBlogTokenInput) els.jasonBlogTokenInput.value = jasonBlogSettings.apiToken;
+    const connected = jasonBlogCache.site?.url || jasonBlogHasToken();
+    if (els.jasonBlogConnectionStatus) {
+      els.jasonBlogConnectionStatus.textContent = connected
+        ? `已配置 ${jasonBlogHost()}。API Token 只保存在本机 Chrome storage。`
+        : "连接 blog.operonai.com，用 API Token 同步文章到 xPoster。";
+    }
+    if (els.jasonBlogStatus) {
+      const siteName = jasonBlogCache.site?.name || "Jason Blog";
+      els.jasonBlogStatus.textContent = connected
+        ? `已连接 ${jasonBlogHost()} · ${siteName}`
+        : `未连接 ${jasonBlogHost()}`;
+    }
+  }
+
+  function applyJasonBlogState(stored = {}) {
+    jasonBlogSettings = normalizeJasonBlogSettings(stored[STORAGE_JASON_BLOG_SETTINGS] || jasonBlogSettings);
+    jasonBlogCache = normalizeJasonBlogCache(stored[STORAGE_JASON_BLOG_CACHE] || jasonBlogCache);
+    syncJasonBlogControls();
+    renderJasonBlogPanel();
+  }
+
+  function jasonBlogFilterPost(post) {
+    const status = els.jasonBlogStatusFilter?.value || "all";
+    const query = String(els.jasonBlogSearchInput?.value || "").trim().toLowerCase();
+    if (status === "published" && !(post.status === "published" && post.is_hidden !== 1)) return false;
+    if (status === "draft" && post.status !== "draft") return false;
+    if (status === "hidden" && post.is_hidden !== 1) return false;
+    if (!query) return true;
+    const haystack = [post.title, post.slug, post.category, post.description, ...(Array.isArray(post.tags) ? post.tags : [])]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(query);
+  }
+
+  function jasonBlogStatusLabel(post) {
+    if (post.status === "draft") return "草稿";
+    if (post.is_hidden === 1) return "隐藏";
+    return "已发布";
+  }
+
+  function jasonBlogDateLabel(value) {
+    const ts = Number(value || 0);
+    if (!Number.isFinite(ts) || ts <= 0) return "未发布";
+    return new Date(ts * 1000).toLocaleDateString("zh-CN", { year: "numeric", month: "numeric", day: "numeric" });
+  }
+
+  function renderJasonBlogPanel() {
+    if (!els.jasonBlogList) return;
+    syncJasonBlogControls();
+    const posts = (jasonBlogCache.posts || []).filter(jasonBlogFilterPost);
+    const safe = shared.escapeHtml;
+    const total = Number(jasonBlogCache.stats?.total || jasonBlogCache.posts?.length || 0);
+    const synced = jasonBlogCache.synced_at
+      ? new Date(jasonBlogCache.synced_at).toLocaleString("zh-CN", { hour12: false })
+      : "尚未同步";
+    if (els.jasonBlogMeta) {
+      if (jasonBlogError && !jasonBlogBusy) {
+        els.jasonBlogMeta.textContent = jasonBlogError;
+      } else {
+      const stats = jasonBlogCache.stats
+        ? `已发布 ${jasonBlogCache.stats.published || 0} · 草稿 ${jasonBlogCache.stats.draft || 0} · 隐藏 ${jasonBlogCache.stats.hidden || 0}`
+        : "配置 Blog URL 和 API Token 后同步文章。";
+      els.jasonBlogMeta.textContent = jasonBlogBusy
+        ? "正在同步 Jason Blog..."
+        : `${posts.length}/${total} 篇文章 · ${synced} · ${stats}`;
+      }
+    }
+    if (els.jasonBlogSync) {
+      els.jasonBlogSync.disabled = jasonBlogBusy;
+      els.jasonBlogSync.textContent = jasonBlogBusy ? "同步中..." : "同步";
+    }
+    if (els.jasonBlogEmpty) els.jasonBlogEmpty.hidden = posts.length > 0;
+    if (!posts.length) {
+      els.jasonBlogList.innerHTML = "";
+      return;
+    }
+    els.jasonBlogList.innerHTML = posts.map((post) => {
+      const tags = Array.isArray(post.tags) ? post.tags.filter(Boolean).slice(0, 3) : [];
+      const meta = [jasonBlogStatusLabel(post), post.category || "未分类", jasonBlogDateLabel(post.published_at), post.slug]
+        .filter(Boolean)
+        .join(" · ");
+      return `
+        <li class="jason-blog-card" data-slug="${safe(post.slug)}">
+          <div class="jason-blog-card-body">
+            <strong>${safe(post.title || post.slug)}</strong>
+            <p>${safe(post.description || "暂无摘要")}</p>
+            <div class="jason-blog-card-meta">${safe(meta)}</div>
+            ${tags.length ? `<div class="jason-blog-tags">${tags.map((tag) => `<span>${safe(tag)}</span>`).join("")}</div>` : ""}
+          </div>
+          <div class="jason-blog-card-actions">
+            <button class="secondary compact" type="button" data-jason-blog-action="view" data-slug="${safe(post.slug)}">查看</button>
+            <button class="secondary compact" type="button" data-jason-blog-action="load" data-slug="${safe(post.slug)}">载入草稿</button>
+            <button class="primary compact" type="button" data-jason-blog-action="write" data-slug="${safe(post.slug)}">写入 X</button>
+          </div>
+        </li>`;
+    }).join("");
+  }
+
+  async function persistJasonBlogState() {
+    if (!hasChromeApi()) return;
+    await chrome.storage.local.set({
+      [STORAGE_JASON_BLOG_SETTINGS]: jasonBlogSettings,
+      [STORAGE_JASON_BLOG_CACHE]: jasonBlogCache
+    });
+  }
+
+  async function saveJasonBlogSettings() {
+    jasonBlogError = "";
+    jasonBlogSettings = normalizeJasonBlogSettings({
+      apiUrl: els.jasonBlogUrlInput?.value || jasonBlogSettings.apiUrl,
+      apiToken: els.jasonBlogTokenInput?.value || ""
+    });
+    await persistJasonBlogState();
+    syncJasonBlogControls();
+    renderJasonBlogPanel();
+    log(`Jason Blog settings saved for ${jasonBlogHost()}.`);
+  }
+
+  function jasonBlogFetchHeaders() {
+    return {
+      Authorization: `Bearer ${jasonBlogSettings.apiToken}`,
+      Accept: "application/json, text/markdown;q=0.9, */*;q=0.8"
+    };
+  }
+
+  async function fetchJasonBlog(url, options = {}) {
+    if (!jasonBlogHasToken()) throw new Error("请先在设置里填写 Jason Blog API Token。");
+    if (!(await ensureJasonBlogPermission())) throw new Error(`Chrome 未授权 xPoster 访问 ${jasonBlogHost()}。`);
+    return fetch(url, {
+      ...options,
+      cache: "no-store",
+      headers: {
+        ...jasonBlogFetchHeaders(),
+        ...(options.headers || {})
+      }
+    });
+  }
+
+  async function syncJasonBlogPosts() {
+    jasonBlogBusy = true;
+    jasonBlogError = "";
+    renderJasonBlogPanel();
+    try {
+      jasonBlogSettings = normalizeJasonBlogSettings({
+        apiUrl: els.jasonBlogUrlInput?.value || jasonBlogSettings.apiUrl,
+        apiToken: els.jasonBlogTokenInput?.value || jasonBlogSettings.apiToken
+      });
+      syncJasonBlogControls();
+      const status = els.jasonBlogStatusFilter?.value || "all";
+      const query = String(els.jasonBlogSearchInput?.value || "").trim();
+      const url = new URL(`${jasonBlogSettings.apiUrl}/api/admin/xposter/posts`);
+      url.searchParams.set("limit", "100");
+      if (status && status !== "all") url.searchParams.set("status", status);
+      if (query) url.searchParams.set("q", query);
+      const response = await fetchJasonBlog(url.toString());
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || `同步失败：HTTP ${response.status}`);
+      }
+      const data = await response.json();
+      jasonBlogCache = normalizeJasonBlogCache({
+        site: data.site,
+        stats: data.stats,
+        posts: data.posts,
+        synced_at: data.synced_at || new Date().toISOString()
+      });
+      await persistJasonBlogState();
+      jasonBlogError = "";
+      log(`Jason Blog synced: ${jasonBlogCache.posts.length} post(s).`);
+    } catch (error) {
+      const message = error?.message || String(error);
+      jasonBlogError = message;
+      if (els.jasonBlogMeta) els.jasonBlogMeta.textContent = message;
+      log(`Jason Blog sync failed: ${message}`);
+    } finally {
+      jasonBlogBusy = false;
+      renderJasonBlogPanel();
+    }
+  }
+
+  function jasonBlogPostBySlug(slug) {
+    return (jasonBlogCache.posts || []).find((post) => post.slug === slug) || null;
+  }
+
+  async function fetchJasonBlogMarkdown(slug) {
+    const response = await fetchJasonBlog(`${jasonBlogSettings.apiUrl}/api/admin/xposter/posts/${encodeURIComponent(slug)}/markdown`, {
+      headers: { Accept: "text/markdown" }
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || `Markdown 拉取失败：HTTP ${response.status}`);
+    }
+    return response.text();
+  }
+
+  async function openJasonBlogPost(slug) {
+    const post = jasonBlogPostBySlug(slug);
+    const url = post?.url || `${jasonBlogSettings.apiUrl}/${slug}`;
+    if (hasChromeApi()) await chrome.tabs.create({ url });
+    else window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  async function loadJasonBlogPost(slug) {
+    const markdown = await fetchJasonBlogMarkdown(slug);
+    setSingleDraftMarkdown(markdown, {
+      source: "jason-blog",
+      fileName: `${slug}.md`,
+      statusTitle: "Jason Blog 草稿已载入",
+      logMessage: `Jason Blog post loaded: ${slug}`
+    });
+    showWorkspacePanel("draft");
+  }
+
+  async function writeJasonBlogPost(slug) {
+    const markdown = await fetchJasonBlogMarkdown(slug);
+    log(`Writing Jason Blog post to X draft: ${slug}`);
+    return importMarkdownDraft(markdown, { sourceFileName: `${slug}.md` });
+  }
+
+  async function handleJasonBlogListClick(event) {
+    const button = event.target.closest("button[data-jason-blog-action]");
+    if (!button) return;
+    const slug = button.dataset.slug;
+    if (!slug) return;
+    button.disabled = true;
+    try {
+      if (button.dataset.jasonBlogAction === "view") await openJasonBlogPost(slug);
+      else if (button.dataset.jasonBlogAction === "load") await loadJasonBlogPost(slug);
+      else if (button.dataset.jasonBlogAction === "write") await writeJasonBlogPost(slug);
+    } catch (error) {
+      const message = error?.message || String(error);
+      jasonBlogError = message;
+      if (els.jasonBlogMeta) els.jasonBlogMeta.textContent = message;
+      log(`Jason Blog action failed: ${message}`);
+    } finally {
+      button.disabled = false;
+      renderJasonBlogPanel();
+    }
   }
 
   function ensureSuccessAudioContext({ force = false } = {}) {
@@ -1768,7 +2082,8 @@
       paste: "Pasted text",
       restored: "Restored draft",
       queue: "Queued draft",
-      typed: "Typed draft"
+      typed: "Typed draft",
+      "jason-blog": "Jason Blog"
     };
     return labels[source] || "Draft";
   }
@@ -2219,6 +2534,8 @@
     if (analyze) saveDraft();
     syncDraftSurface();
     updateWriteButton();
+    syncJasonBlogControls();
+    renderJasonBlogPanel();
     if (text.trim()) {
       setDraftDropStatus("Markdown loaded", draftReadyDetail(text.length), "done");
       if (analyze) scheduleAnalyzeDraft(STARTUP_DRAFT_ANALYZE_DELAY_MS);
@@ -4910,6 +5227,7 @@
       applyImportOptions(importOptions, { refresh: false });
       applyArticleExportOptions(articleExportOptions);
       applySuccessFeedbackOptions(successFeedbackOptions);
+      applyJasonBlogState({});
       await restoreLanguage();
       analyzeDraft();
       return;
@@ -4919,6 +5237,7 @@
     applyImportOptions(stored[STORAGE_IMPORT_OPTIONS] || importOptions, { refresh: false });
     applyArticleExportOptions(stored[STORAGE_ARTICLE_EXPORT_SETTINGS] || articleExportOptions);
     applySuccessFeedbackOptions(stored[STORAGE_SUCCESS_FEEDBACK] || successFeedbackOptions);
+    applyJasonBlogState(stored);
     applyStartupDraftState(stored);
     await restoreLanguage();
     for (const input of getLiveResultItems()) {
@@ -5128,6 +5447,9 @@
       panel.classList.toggle("active", isActive);
     });
     document.querySelectorAll(`.panel[data-panel="${CSS.escape(target)}"]`).forEach((panel) => translateDynamicDom(panel));
+    if (target === "jasonBlog") {
+      renderJasonBlogPanel();
+    }
     if (target === "records") {
       void ensureRecordHistoryRestored({ render: true }).then(() => {
         syncRecordPanel({ translate: true });
@@ -7464,6 +7786,21 @@
       sound: els.successSoundOption?.checked !== false,
       soundStyle: els.successSoundStyle?.value || "soft"
     });
+  });
+  els.jasonBlogSync?.addEventListener("click", () => {
+    void syncJasonBlogPosts();
+  });
+  els.jasonBlogSaveSettings?.addEventListener("click", () => {
+    void saveJasonBlogSettings();
+  });
+  els.jasonBlogSettingsShortcut?.addEventListener("click", () => {
+    showWorkspacePanel("settings");
+    window.setTimeout(() => els.jasonBlogUrlInput?.focus?.(), 0);
+  });
+  els.jasonBlogSearchInput?.addEventListener("input", renderJasonBlogPanel);
+  els.jasonBlogStatusFilter?.addEventListener("change", renderJasonBlogPanel);
+  els.jasonBlogList?.addEventListener("click", (event) => {
+    void handleJasonBlogListClick(event);
   });
   els.successSoundStyle?.addEventListener("change", () => {
     void setSuccessFeedbackOptions({

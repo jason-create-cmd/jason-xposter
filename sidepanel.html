@@ -32,6 +32,7 @@
 
       <nav class="tabs" aria-label="Workspace sections">
         <button class="tab active" type="button" data-tab="draft" data-i18n="Pending">Pending</button>
+        <button class="tab" type="button" data-tab="jasonBlog">Jason Blog</button>
         <button class="tab" type="button" data-tab="records" data-i18n="Records">Records</button>
         <button class="tab" type="button" data-tab="settings" data-i18n="Settings">Settings</button>
       </nav>
@@ -124,6 +125,38 @@
             <span class="progress-meter" aria-label="Writing progress meter"><span id="liveProgressBar"></span></span>
           </section>
         </section>
+      </section>
+
+
+      <section class="jason-blog panel" id="jasonBlogPanel" data-panel="jasonBlog" aria-label="Jason Blog">
+        <div class="jason-blog-head">
+          <div>
+            <h2>Jason Blog</h2>
+            <p id="jasonBlogStatus">未连接 blog.operonai.com</p>
+          </div>
+          <div class="button-cluster">
+            <button class="secondary compact" id="jasonBlogSettingsShortcut" type="button">设置</button>
+            <button class="primary compact" id="jasonBlogSync" type="button">同步</button>
+          </div>
+        </div>
+        <div class="jason-blog-controls">
+          <label>
+            <span>状态</span>
+            <select id="jasonBlogStatusFilter">
+              <option value="all">全部</option>
+              <option value="published">已发布</option>
+              <option value="draft">草稿</option>
+              <option value="hidden">隐藏</option>
+            </select>
+          </label>
+          <label>
+            <span>搜索</span>
+            <input id="jasonBlogSearchInput" type="search" placeholder="标题、链接、分类" />
+          </label>
+        </div>
+        <div class="jason-blog-meta" id="jasonBlogMeta">配置 Blog URL 和 API Token 后同步文章。</div>
+        <div class="jason-blog-empty" id="jasonBlogEmpty">暂无文章。点击同步从 Jason Blog 拉取。</div>
+        <ol class="jason-blog-list" id="jasonBlogList"></ol>
       </section>
 
       <section class="records panel" id="recordsPanel" data-panel="records" aria-label="Records">
@@ -836,6 +869,24 @@
               <span data-i18n="Dark">Dark</span>
             </label>
           </fieldset>
+        </div>
+
+        <div class="setting-row setting-row-stack">
+          <div>
+            <strong>Jason Blog</strong>
+            <span id="jasonBlogConnectionStatus">连接 blog.operonai.com，用 API Token 同步文章到 xPoster。</span>
+          </div>
+          <div class="jason-blog-settings">
+            <label>
+              <span>Blog URL</span>
+              <input id="jasonBlogUrlInput" type="url" placeholder="https://blog.operonai.com" spellcheck="false" />
+            </label>
+            <label>
+              <span>API Token</span>
+              <input id="jasonBlogTokenInput" type="password" placeholder="qm_xxx" spellcheck="false" autocomplete="off" />
+            </label>
+            <button class="secondary compact" id="jasonBlogSaveSettings" type="button">保存 Blog 设置</button>
+          </div>
         </div>
         <div class="setting-row">
           <div>
