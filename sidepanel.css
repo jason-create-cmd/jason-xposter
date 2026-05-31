@@ -1684,21 +1684,26 @@ h2 {
 }
 
 .draft-editor-mode-toggle .draft-mode-icon-write,
-.draft-editor-mode-toggle [data-mode-label="write"] {
+.draft-editor-mode-toggle [data-mode-label="write"],
+.draft-editor-mode-toggle [data-mode-label="edit"] {
   display: none;
 }
 
 .draft-editor-mode-toggle[aria-pressed="true"] .draft-mode-icon-read,
 .draft-editor-mode-toggle[aria-pressed="true"] [data-mode-label="read"],
+.draft-editor-mode-toggle[aria-pressed="true"] [data-mode-label="preview"],
 .draft-editor-shell[data-mode="read"] .draft-editor-mode-toggle .draft-mode-icon-read,
-.draft-editor-shell[data-mode="read"] .draft-editor-mode-toggle [data-mode-label="read"] {
+.draft-editor-shell[data-mode="read"] .draft-editor-mode-toggle [data-mode-label="read"],
+.draft-editor-shell[data-mode="read"] .draft-editor-mode-toggle [data-mode-label="preview"] {
   display: none;
 }
 
 .draft-editor-mode-toggle[aria-pressed="true"] .draft-mode-icon-write,
 .draft-editor-mode-toggle[aria-pressed="true"] [data-mode-label="write"],
+.draft-editor-mode-toggle[aria-pressed="true"] [data-mode-label="edit"],
 .draft-editor-shell[data-mode="read"] .draft-editor-mode-toggle .draft-mode-icon-write,
-.draft-editor-shell[data-mode="read"] .draft-editor-mode-toggle [data-mode-label="write"] {
+.draft-editor-shell[data-mode="read"] .draft-editor-mode-toggle [data-mode-label="write"],
+.draft-editor-shell[data-mode="read"] .draft-editor-mode-toggle [data-mode-label="edit"] {
   display: inline;
 }
 
@@ -1777,8 +1782,56 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.draft-media-alert[data-tone="batch"],
+.draft-media-alert[data-tone="done"] {
+  left: auto;
+  top: 10px;
+  right: 10px;
+  width: min(214px, calc(100% - 20px));
+  gap: 3px;
+  padding: 9px 11px;
+  border-color: color-mix(in oklch, var(--signal), var(--line) 54%);
+  background: color-mix(in oklch, var(--signal), var(--paper) 94%);
+  color: color-mix(in oklch, var(--signal-text), var(--ink) 8%);
+  text-align: left;
+  transform: translateY(0);
+  animation-name: xposter-batch-alert-in;
+}
+
+.draft-media-alert[data-tone="done"] {
+  border-color: color-mix(in oklch, var(--ok), var(--line) 52%);
+  background: color-mix(in oklch, var(--ok), var(--paper) 94%);
+  color: color-mix(in oklch, var(--ok), var(--ink) 24%);
+}
+
+.draft-media-alert[data-tone="batch"] strong,
+.draft-media-alert[data-tone="done"] strong {
+  font-size: 12px;
+}
+
+.draft-media-alert[data-tone="batch"] span,
+.draft-media-alert[data-tone="done"] span {
+  font-size: 11px;
+}
+
+.draft-media-alert[data-tone="batch"] span {
+  color: color-mix(in oklch, var(--signal-text), var(--muted) 28%);
+}
+
+.draft-media-alert[data-tone="done"] span {
+  color: color-mix(in oklch, var(--ok), var(--muted) 32%);
+}
+
 :root[data-theme="dark"] .draft-media-alert {
   background: color-mix(in oklch, var(--danger), #17232d 86%);
+}
+
+:root[data-theme="dark"] .draft-media-alert[data-tone="batch"] {
+  background: color-mix(in oklch, var(--signal), var(--paper) 22%);
+}
+
+:root[data-theme="dark"] .draft-media-alert[data-tone="done"] {
+  background: color-mix(in oklch, var(--ok), var(--paper) 20%);
 }
 
 @keyframes xposter-media-alert-in {
@@ -1789,6 +1842,17 @@ h2 {
   to {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes xposter-batch-alert-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -3422,21 +3486,29 @@ textarea:focus-visible,
 }
 
 .actions[data-empty="true"] .primary {
-  justify-content: center;
-  border: 1px solid color-mix(in oklch, var(--signal), var(--line) 42%);
-  background: color-mix(in oklch, var(--signal), var(--paper) 94%);
-  color: color-mix(in oklch, var(--signal-text), var(--ink) 10%);
+  min-height: 24px;
+  justify-content: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: color-mix(in oklch, var(--muted), var(--ink) 20%);
+  cursor: default;
   box-shadow: none;
-  text-align: center;
+  text-align: left;
 }
 
 .actions[data-empty="true"] .primary:hover {
-  border-color: color-mix(in oklch, var(--signal), var(--line) 22%);
-  background: color-mix(in oklch, var(--signal), var(--paper) 89%);
+  background: transparent;
 }
 
 .actions[data-empty="true"] .primary svg {
-  color: currentColor;
+  width: 16px;
+  height: 16px;
+  color: color-mix(in oklch, var(--muted), var(--paper) 10%);
+}
+
+.actions[data-empty="true"] .import-hint {
+  color: color-mix(in oklch, var(--muted), var(--ink) 4%);
 }
 
 .secondary:disabled {
@@ -4240,24 +4312,60 @@ textarea:focus-visible,
 .record-edit-actions {
   align-self: end;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 8px 10px 8px 12px;
+  border-top: 1px solid color-mix(in oklch, var(--line), transparent 44%);
+  background: color-mix(in oklch, var(--paper-2), var(--paper) 58%);
+}
+
+.record-edit-context {
+  min-width: 0;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
-  padding: 5px 7px 5px 8px;
-  border-top: 0;
-  background: color-mix(in oklch, var(--paper-2), var(--paper) 44%);
 }
 
 .record-edit-stats {
+  flex: 0 1 auto;
   min-width: 0;
-  color: var(--muted);
+  max-width: 16ch;
+  color: color-mix(in oklch, var(--muted), var(--ink) 10%);
   font-size: 11px;
-  font-weight: 720;
+  font-weight: 740;
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.record-edit-stats:empty,
+.record-edit-stats[hidden] {
+  display: none;
+}
+
+.record-edit-mode-toggle {
+  flex: 0 0 auto;
+  min-width: 76px;
+  height: 30px;
+  padding-inline: 9px;
+  border-color: color-mix(in oklch, var(--line), transparent 18%);
+  background: color-mix(in oklch, var(--paper), var(--paper-2) 20%);
+  color: color-mix(in oklch, var(--muted), var(--ink) 16%);
+  font-size: 11px;
+  font-weight: 780;
+}
+
+.record-edit-mode-toggle:hover {
+  background: color-mix(in oklch, var(--signal), var(--paper) 95%);
+}
+
+.record-edit-mode-toggle[aria-pressed="true"] {
+  border-color: color-mix(in oklch, var(--signal), var(--line) 42%);
+  background: color-mix(in oklch, var(--signal), var(--paper) 91%);
+  color: var(--signal-text);
 }
 
 .record-edit-action-group {
@@ -4266,24 +4374,45 @@ textarea:focus-visible,
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
+  padding-left: 10px;
+  border-left: 1px solid color-mix(in oklch, var(--line), transparent 42%);
 }
 
 .record-edit-actions .primary,
 .record-edit-actions .secondary {
   flex: 0 1 auto;
   min-width: 0;
-  min-height: 32px;
-  height: 32px;
+  min-height: 34px;
+  height: 34px;
   gap: 6px;
-  padding-inline: 10px;
-  font-size: 11.5px;
+  padding-inline: 11px;
+  font-size: 12px;
+  font-weight: 780;
+  white-space: nowrap;
+}
+
+.record-edit-actions .secondary {
+  background: color-mix(in oklch, var(--paper), var(--paper-2) 16%);
+}
+
+.record-edit-actions .primary {
+  min-width: 118px;
 }
 
 .record-edit-copy {
-  width: 32px;
-  height: 32px;
-  border-color: transparent;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
   background: transparent;
+  color: color-mix(in oklch, var(--muted), var(--ink) 8%);
+}
+
+.record-edit-copy:hover,
+.record-edit-copy:focus-visible {
+  border-color: color-mix(in oklch, var(--line), transparent 30%);
+  background: color-mix(in oklch, var(--paper), var(--paper-2) 20%);
+  color: var(--ink);
 }
 
 .record-edit-actions svg {
@@ -5378,8 +5507,21 @@ textarea:focus-visible,
   .record-edit-actions {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
+    padding: 7px;
+  }
+
+  .record-edit-context {
     gap: 6px;
-    padding: 6px;
+  }
+
+  .record-edit-mode-toggle {
+    min-width: 72px;
+    height: 32px;
+  }
+
+  .record-edit-stats {
+    max-width: 13ch;
   }
 
   .record-edit-action-group {
@@ -5388,6 +5530,14 @@ textarea:focus-visible,
     display: grid;
     grid-template-columns: 36px minmax(0, 1fr) minmax(0, 1fr);
     gap: 6px;
+    padding-left: 0;
+    border-left: 0;
+    padding-top: 6px;
+    border-top: 1px solid color-mix(in oklch, var(--line), transparent 46%);
+  }
+
+  .record-edit-action-group:not(:has(.primary:not([hidden]))) {
+    grid-template-columns: 36px minmax(0, 1fr);
   }
 
   .record-edit-action-group .primary,

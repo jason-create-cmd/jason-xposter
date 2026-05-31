@@ -1178,8 +1178,11 @@ assert.ok(
 );
 assert.ok(
   sidepanelText.includes("const isCompact = !value.trim() || (value.length < 420 && meaningfulLines <= 8 && !hasRichBlocks);") &&
-    sidepanelHtml.includes('id="importHint" data-tone="ready" aria-hidden="true" hidden') &&
+    sidepanelHtml.includes('id="importHint" data-tone="ready" data-i18n="Paste in the editor above, or choose a .md file."') &&
     sidepanelCss.includes(".import-hint[hidden]") &&
+    sidepanelText.includes('label: "No Markdown yet"') &&
+    sidepanelText.includes('const needsMarkdown = !hasDraft && !hasQueue;') &&
+    sidepanelText.includes('text: "Paste in the editor above, or choose a .md file."') &&
     sidepanelText.includes('return { hidden: true, tone: "ready", text: "" };') &&
     sidepanelText.includes("applyImportHint(hint)") &&
     sidepanelText.includes("els.importHint.hidden = hidden") &&

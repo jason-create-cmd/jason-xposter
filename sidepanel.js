@@ -90,6 +90,8 @@
   let queueMotionTimer = null;
   let animatedQueueItemIds = new Set();
   let batchWriting = false;
+  let batchWriteProgress = null;
+  let batchWriteProgressTimer = null;
   let importCancelRequested = false;
   let importOptions = { setTitle: true, setCover: true };
   let successFeedbackOptions = { confetti: true, sound: true, soundStyle: "soft" };
@@ -392,10 +394,11 @@
     if (!button) return;
     const isRead = mode === "read";
     const nextMode = isRead ? "edit" : "read";
+    const nextLabel = nextMode === "read" ? "Preview" : "Edit";
     button.dataset.nextMode = nextMode;
     button.setAttribute("aria-pressed", isRead ? "true" : "false");
-    button.setAttribute("aria-label", localizeText(nextMode === "read" ? "Read" : "Write"));
-    button.title = localizeText(nextMode === "read" ? "Read" : "Write");
+    button.setAttribute("aria-label", localizeText(nextLabel));
+    button.title = localizeText(nextLabel);
   }
 
   function updateDraftEditorStatus() {
@@ -1508,11 +1511,79 @@
     return mediaNoteText(X_ARTICLE_MEDIA_CAPACITY_NOTE, estimate);
   }
 
+  function batchWriteProgressValues(progress = batchWriteProgress) {
+    const total = Math.max(0, Number(progress?.total || 0));
+    const done = Math.min(total, Math.max(0, Number(progress?.done || 0)));
+    return {
+      done: String(done),
+      total: String(total)
+    };
+  }
+
+  function batchWriteProgressTitle(progress = batchWriteProgress) {
+    if (progress?.state === "complete") return "Batch complete";
+    if (progress?.state === "stopped") return "Batch stopped";
+    return "Batch writing";
+  }
+
+  function batchWriteProgressTone(progress = batchWriteProgress) {
+    return progress?.state === "complete" ? "done" : "batch";
+  }
+
+  function clearBatchWriteProgress({ hide = true } = {}) {
+    window.clearTimeout(batchWriteProgressTimer);
+    batchWriteProgressTimer = null;
+    batchWriteProgress = null;
+    if (hide) syncDraftMediaAlert();
+  }
+
+  function scheduleBatchWriteProgressClear() {
+    window.clearTimeout(batchWriteProgressTimer);
+    batchWriteProgressTimer = window.setTimeout(() => {
+      clearBatchWriteProgress();
+    }, 4800);
+  }
+
+  function setBatchWriteProgress(nextProgress) {
+    window.clearTimeout(batchWriteProgressTimer);
+    batchWriteProgressTimer = null;
+    batchWriteProgress = nextProgress;
+    syncDraftMediaAlert();
+  }
+
   function syncDraftMediaAlert(estimate = mediaUploadEstimate()) {
     if (!els.draftMediaAlert) return;
-    const show = Boolean(estimate?.overSoftLimit);
-    els.draftMediaAlert.hidden = !show;
-    if (!show) return;
+    if (estimate?.overSoftLimit) {
+      els.draftMediaAlert.dataset.tone = "danger";
+      els.draftMediaAlert.setAttribute("role", "alert");
+      els.draftMediaAlert.setAttribute("aria-live", "assertive");
+      els.draftMediaAlert.hidden = false;
+      if (els.draftMediaAlertTitle) setLocalizedText(els.draftMediaAlertTitle, "Too many images");
+      if (els.draftMediaAlertDetail) {
+        const values = mediaNoteValues(estimate);
+        delete els.draftMediaAlertDetail.dataset.i18n;
+        els.draftMediaAlertDetail.__xposterSourceText = X_ARTICLE_MEDIA_LIMIT_WARNING;
+        els.draftMediaAlertDetail.textContent = i18n
+          ? i18n.t(X_ARTICLE_MEDIA_LIMIT_WARNING, values)
+          : mediaLimitWarningText(estimate);
+      }
+      return;
+    }
+    if (batchWriteProgress?.total > 1) {
+      els.draftMediaAlert.dataset.tone = batchWriteProgressTone();
+      els.draftMediaAlert.setAttribute("role", "status");
+      els.draftMediaAlert.setAttribute("aria-live", "polite");
+      els.draftMediaAlert.hidden = false;
+      if (els.draftMediaAlertTitle) setLocalizedText(els.draftMediaAlertTitle, batchWriteProgressTitle());
+      if (els.draftMediaAlertDetail) {
+        setLocalizedMessage(els.draftMediaAlertDetail, "Success {done}/{total} drafts", batchWriteProgressValues());
+      }
+      return;
+    }
+    els.draftMediaAlert.hidden = true;
+    delete els.draftMediaAlert.dataset.tone;
+    els.draftMediaAlert.setAttribute("role", "alert");
+    els.draftMediaAlert.setAttribute("aria-live", "assertive");
     if (els.draftMediaAlertTitle) setLocalizedText(els.draftMediaAlertTitle, "Too many images");
     if (els.draftMediaAlertDetail) {
       const values = mediaNoteValues(estimate);
@@ -2462,7 +2533,9 @@
   function updateRecordEditorStats() {
     if (!els.recordEditStats) return;
     const text = recordEditorText();
-    setLocalizedText(els.recordEditStats, editorStatsText(text, markdownSegmentCounts(text)));
+    const stats = editorStatsText(text, markdownSegmentCounts(text));
+    els.recordEditStats.hidden = !stats;
+    setLocalizedText(els.recordEditStats, stats);
   }
 
   function syncRecordEditSyntaxScroll() {
@@ -3439,7 +3512,7 @@
   function primaryImportAction(gate) {
     if (queueModeActive()) return { action: "batch", label: "Write all drafts", enabled: !batchWriting };
     if (latestParsed?.segments?.length) return { action: "import", label: "Write to X draft", enabled: !batchWriting };
-    return { action: "blocked", label: "Write to X draft", enabled: false };
+    return { action: "blocked", label: "No Markdown yet", enabled: false };
   }
 
   function focusMarkdownInput() {
@@ -3480,8 +3553,10 @@
     if (!button) return;
     const actions = button.closest(".actions");
     if (actions) actions.dataset.empty = hasDraft || hasQueue || busy || batchWriting ? "false" : "true";
-    button.disabled = busy || batchWriting;
-    button.setAttribute("aria-disabled", busy || batchWriting ? "true" : "false");
+    const needsMarkdown = !hasDraft && !hasQueue;
+    const disabled = busy || batchWriting || needsMarkdown;
+    button.disabled = disabled;
+    button.setAttribute("aria-disabled", disabled ? "true" : "false");
     setImportButtonLabel(
       batchWriting
         ? "Writing all..."
@@ -3491,10 +3566,12 @@
             ? "Write all drafts"
             : hasDraft
               ? "Write to X draft"
-              : "Add Markdown"
+              : "No Markdown yet"
     );
     if (els.importHint) {
-      const hint = compactWriteHint({ hasDraft, hasQueue, busy: busy || batchWriting });
+      const hint = needsMarkdown
+        ? { tone: "ready", text: "Paste in the editor above, or choose a .md file." }
+        : compactWriteHint({ hasDraft, hasQueue, busy: busy || batchWriting });
       applyImportHint(hint);
     }
     translateDynamicDom(actions || button);
@@ -5343,7 +5420,10 @@
 
   async function importDraftQueue() {
     if (batchWriting || !queueModeActive()) return null;
+    const batchTotal = draftQueue.length;
+    let batchDone = 0;
     batchWriting = true;
+    setBatchWriteProgress({ total: batchTotal, done: batchDone, state: "writing" });
     updateWriteButton();
     try {
       const markdowns = draftQueueMarkdowns();
@@ -5352,6 +5432,7 @@
       const checks = buildPreflightChecks(preflightContext);
       const localAssetBlocker = localAssetWriteBlocker(checks, preflightContext);
       if (localAssetBlocker) {
+        clearBatchWriteProgress();
         return await handleLocalAssetWriteBlocker(localAssetBlocker, { chooseWhenAvailable: true });
       }
       const mediaBlocker = firstQueueMediaLimitBlocker(mediaUploadEstimateForMarkdowns(markdowns, importOptions));
@@ -5361,6 +5442,7 @@
         if (mediaBlocker.item?.id) loadQueueItem(mediaBlocker.item.id, { persist: false, remember: false });
         setDraftDropStatus(mediaBlocker.title, message, "error");
         recordLiveProgressEvent("preflight-blocked", { text: message, error: message, level: "warn", mediaLimit: true });
+        clearBatchWriteProgress();
         return { ok: false, error: message, mediaLimit: true };
       }
       const origins = remoteImageOriginsForMarkdowns(draftQueue.map((item) => item.markdown), importOptions);
@@ -5378,6 +5460,8 @@
         const item = draftQueue[0];
         const result = await importQueueItem(item.id);
         if (!result?.ok || result?.cancelled) break;
+        batchDone += 1;
+        setBatchWriteProgress({ total: batchTotal, done: batchDone, state: batchDone === batchTotal ? "complete" : "writing" });
         await delay(300);
       }
     } finally {
@@ -5385,6 +5469,16 @@
       activeWriteQueueItemId = null;
       updateWriteButton();
       renderDraftQueue();
+      if (batchWriteProgress?.total > 1) {
+        batchWriteProgress = {
+          ...batchWriteProgress,
+          state: batchWriteProgress.done >= batchWriteProgress.total ? "complete" : "stopped"
+        };
+        syncDraftMediaAlert();
+        scheduleBatchWriteProgressClear();
+      } else {
+        clearBatchWriteProgress();
+      }
     }
     return null;
   }

@@ -84,11 +84,11 @@
           </div>
           <div class="draft-editor-status" id="draftEditorStatus" aria-live="polite">
             <span id="draftEditorStats"></span>
-            <button class="draft-editor-mode-toggle" id="draftEditorModeToggle" type="button" data-editor-mode-toggle aria-label="Read" title="Read">
+            <button class="draft-editor-mode-toggle" id="draftEditorModeToggle" type="button" data-editor-mode-toggle aria-label="Preview" title="Preview">
               <svg class="draft-mode-icon draft-mode-icon-read" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2c4.4 0 7.6 3.3 9.1 6.8-1.5 3.5-4.7 6.8-9.1 6.8S4.4 15.5 2.9 12C4.4 8.5 7.6 5.2 12 5.2Zm0 2C8.7 7.2 6.2 9.4 5.1 12c1.1 2.6 3.6 4.8 6.9 4.8s5.8-2.2 6.9-4.8C17.8 9.4 15.3 7.2 12 7.2Zm0 1.8a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm0 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z"/></svg>
               <svg class="draft-mode-icon draft-mode-icon-write" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.8 4.2a2.9 2.9 0 0 1 4.1 4.1L9.7 18.5 5 19l.5-4.7L15.8 4.2Zm1.4 1.4L7.4 15.4l-.2 1.4 1.4-.2 9.8-9.8a.9.9 0 0 0-1.2-1.2Z"/></svg>
-              <span data-mode-label="read" data-i18n="Read">Read</span>
-              <span data-mode-label="write" data-i18n="Write">Write</span>
+              <span data-mode-label="preview" data-i18n="Preview">Preview</span>
+              <span data-mode-label="edit" data-i18n="Edit">Edit</span>
             </button>
           </div>
           <div class="draft-media-alert" id="draftMediaAlert" role="alert" aria-live="assertive" hidden>
@@ -108,12 +108,12 @@
 
         <section class="actions publish-dock" aria-label="Write to X draft" data-empty="true">
           <div class="action-primary-block">
-            <button class="primary" id="importDraft" type="button">
+            <button class="primary" id="importDraft" type="button" disabled aria-disabled="true">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v3H4V4Zm0 5h10v3H4V9Zm0 5h8v3H4v-3Zm13.5-.7V9h2v4.3l1.6-1.6 1.4 1.4-3.5 3.5-3.5-3.5 1.4-1.4 1.6 1.6ZM17 18h5v2h-5v-2Z"/></svg>
-              <span data-i18n="Write to X draft">Write to X draft</span>
+              <span data-i18n="No Markdown yet">No Markdown yet</span>
             </button>
           </div>
-          <p class="import-hint" id="importHint" data-tone="ready" aria-hidden="true" hidden></p>
+          <p class="import-hint" id="importHint" data-tone="ready" data-i18n="Paste in the editor above, or choose a .md file.">Paste in the editor above, or choose a .md file.</p>
           <section class="inline-write-status" id="liveProgress" aria-label="Article writing progress" data-tone="idle" hidden>
             <div>
               <strong id="liveProgressTitle">Nothing is running</strong>
@@ -972,13 +972,15 @@
           </div>
         </div>
         <div class="record-edit-actions">
-          <span class="record-edit-stats" id="recordEditStats">0 chars</span>
-          <button class="draft-editor-mode-toggle record-edit-mode-toggle" id="recordEditModeToggle" type="button" data-record-action="toggle-preview" aria-label="Read" title="Read">
-            <svg class="draft-mode-icon draft-mode-icon-read" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2c4.4 0 7.6 3.3 9.1 6.8-1.5 3.5-4.7 6.8-9.1 6.8S4.4 15.5 2.9 12C4.4 8.5 7.6 5.2 12 5.2Zm0 2C8.7 7.2 6.2 9.4 5.1 12c1.1 2.6 3.6 4.8 6.9 4.8s5.8-2.2 6.9-4.8C17.8 9.4 15.3 7.2 12 7.2Zm0 1.8a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm0 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z"/></svg>
-            <svg class="draft-mode-icon draft-mode-icon-write" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.8 4.2a2.9 2.9 0 0 1 4.1 4.1L9.7 18.5 5 19l.5-4.7L15.8 4.2Zm1.4 1.4L7.4 15.4l-.2 1.4 1.4-.2 9.8-9.8a.9.9 0 0 0-1.2-1.2Z"/></svg>
-            <span data-mode-label="read" data-i18n="Read">Read</span>
-            <span data-mode-label="write" data-i18n="Write">Write</span>
-          </button>
+          <div class="record-edit-context">
+            <span class="record-edit-stats" id="recordEditStats">0 chars</span>
+            <button class="draft-editor-mode-toggle record-edit-mode-toggle" id="recordEditModeToggle" type="button" data-record-action="toggle-preview" aria-label="Preview" title="Preview">
+              <svg class="draft-mode-icon draft-mode-icon-read" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2c4.4 0 7.6 3.3 9.1 6.8-1.5 3.5-4.7 6.8-9.1 6.8S4.4 15.5 2.9 12C4.4 8.5 7.6 5.2 12 5.2Zm0 2C8.7 7.2 6.2 9.4 5.1 12c1.1 2.6 3.6 4.8 6.9 4.8s5.8-2.2 6.9-4.8C17.8 9.4 15.3 7.2 12 7.2Zm0 1.8a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm0 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z"/></svg>
+              <svg class="draft-mode-icon draft-mode-icon-write" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.8 4.2a2.9 2.9 0 0 1 4.1 4.1L9.7 18.5 5 19l.5-4.7L15.8 4.2Zm1.4 1.4L7.4 15.4l-.2 1.4 1.4-.2 9.8-9.8a.9.9 0 0 0-1.2-1.2Z"/></svg>
+              <span data-mode-label="edit" data-i18n="Edit">Edit</span>
+              <span data-mode-label="preview" data-i18n="Preview">Preview</span>
+            </button>
+          </div>
           <div class="record-edit-action-group">
             <button class="record-icon-action record-edit-copy" type="button" data-record-action="copy-edited" title="Copy text" aria-label="Copy text" data-i18n-title="Copy text" data-i18n-aria-label="Copy text">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7h10v13H8V7Zm2 2v9h6V9h-6ZM5 4h10v2H7v10H5V4Z"/></svg>
