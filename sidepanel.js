@@ -1049,6 +1049,44 @@
     return (jasonBlogCache.posts || []).find((post) => post.slug === slug) || null;
   }
 
+  function shouldAbsolutizeJasonBlogUrl(value) {
+    const trimmed = String(value || "").trim();
+    if (!trimmed || trimmed.startsWith("#")) return false;
+    if (/^(?:[a-z]+:|\/\/)/i.test(trimmed)) return false;
+    return true;
+  }
+
+  function absolutizeJasonBlogUrl(value) {
+    const trimmed = String(value || "").trim();
+    if (!shouldAbsolutizeJasonBlogUrl(trimmed)) return trimmed;
+    try {
+      return new URL(trimmed, jasonBlogSettings.apiUrl).toString();
+    } catch {
+      return trimmed;
+    }
+  }
+
+  function normalizeJasonBlogFrontmatterLine(line) {
+    const match = String(line || "").match(/^(\s*(?:cover|source_url):\s*)(["']?)(.*?)(\2)\s*$/i);
+    if (!match) return line;
+    const value = String(match[3] || "").trim();
+    if (!shouldAbsolutizeJasonBlogUrl(value)) return line;
+    const quote = match[2] || '"';
+    return `${match[1]}${quote}${absolutizeJasonBlogUrl(value)}${quote}`;
+  }
+
+  function normalizeJasonBlogMarkdown(markdown) {
+    const normalized = String(markdown || "").replace(/\r\n/g, "\n");
+    const withFrontmatterUrls = normalized.replace(/^\s*(?:cover|source_url):\s*.*$/gmi, normalizeJasonBlogFrontmatterLine);
+    return withFrontmatterUrls.replace(
+      /(!?\[[^\]\n]*(?:\][^\[\]\n]*)*\]\()([^\s)]+)(\))/g,
+      (match, prefix, rawUrl, suffix) => {
+        if (!shouldAbsolutizeJasonBlogUrl(rawUrl)) return match;
+        return `${prefix}${absolutizeJasonBlogUrl(rawUrl)}${suffix}`;
+      }
+    );
+  }
+
   async function fetchJasonBlogMarkdown(slug) {
     const response = await fetchJasonBlog(`${jasonBlogSettings.apiUrl}/api/admin/xposter/posts/${encodeURIComponent(slug)}/markdown`, {
       headers: { Accept: "text/markdown" }
@@ -1057,7 +1095,7 @@
       const body = await response.json().catch(() => ({}));
       throw new Error(body.error || `Markdown 拉取失败：HTTP ${response.status}`);
     }
-    return response.text();
+    return normalizeJasonBlogMarkdown(await response.text());
   }
 
   async function openJasonBlogPost(slug) {

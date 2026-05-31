@@ -752,6 +752,13 @@ assert.ok(
   "local image folder access should stay contextual: settings only shows status, preflight shows the action, and writes block before unresolved local assets start"
 );
 assert.ok(
+  sidepanelText.includes("function normalizeJasonBlogMarkdown") &&
+    sidepanelText.includes("return normalizeJasonBlogMarkdown(await response.text());") &&
+    sidepanelText.includes("new URL(trimmed, jasonBlogSettings.apiUrl).toString()"),
+  "Jason Blog imports should convert site-relative Markdown image and cover URLs before local image preflight"
+);
+
+assert.ok(
   sidepanelText.includes("function parseMarkdownForWrite") &&
     sidepanelText.includes("({ parsed, counts } = parseMarkdownForWrite(markdown))") &&
     sidepanelText.includes("const preflightContext = { parsed, counts }") &&
